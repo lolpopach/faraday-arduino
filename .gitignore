@@ -1,0 +1,14 @@
+# Arduino build output
+build/
+*.hex
+*.elf
+
+# Captured experiment data -- keep runs out of the repo
+*.csv
+*.mp4
+*.mov
+*.webm
+
+# Editor / OS noise
+.vscode/
+.DS_Store
