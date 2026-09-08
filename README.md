@@ -6,7 +6,8 @@ record lines up with a video of the swing.
 
 **→ [`faraday_logger/faraday_logger.ino`](faraday_logger/faraday_logger.ino)**
 
-Video side: [faraday-cv](https://github.com/lolpopach/general-use/tree/claude/color-segmentation-program-4ex0y8/faraday-cv)
+Video side: [faraday-cv](https://github.com/lolpopach/general-use) — the
+`faraday-cv` folder holds the no-code colour-segmentation analysis tool.
 
 ---
 
