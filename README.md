@@ -98,10 +98,13 @@ time_s,voltage_mV
 Classrooms usually reduce Faraday's law to: _a faster magnet makes a bigger
 voltage._ This experiment is built to break that shortcut.
 
-$$\varepsilon = -N\frac{d\Phi}{dt} = -N\frac{d\Phi}{dx}\cdot v$$
+$$\varepsilon = -N\frac{d\Phi}{dt} = -N\frac{d\Phi}{ds}\,|\mathbf{v}|$$
 
-Speed $v$ is only **half** of it. The other half, $d\Phi/dx$, depends on _where_
-the magnet is relative to the coil.
+Here $s$ is arc length measured along the **instantaneous direction of motion**,
+so $d\Phi/ds$ is the flux gradient the magnet actually travels through.
+
+Speed $|\mathbf{v}|$ is only **half** of it. The other half, $d\Phi/ds$, depends on
+_where_ the magnet is relative to the coil.
 
 A pendulum separates the two for free — fastest at the bottom, slowest at the
 ends. So the coil goes **near the turning point**:
@@ -118,13 +121,13 @@ comparatively slowly — contradicting the "faster is always bigger" rule.
 For college level, rearranging gives a quantity computable straight from the
 measurements:
 
-$$\frac{\varepsilon}{v} = -N\frac{d\Phi}{dx}$$
+$$\frac{\varepsilon}{|\mathbf{v}|} = -N\frac{d\Phi}{ds}$$
 
-Plotting $\varepsilon$ against $\varepsilon/v$ makes the spatial variation of the
-flux visible.
+Plotting $\varepsilon$ against $\varepsilon/|\mathbf{v}|$ makes the spatial variation
+of the flux visible.
 
 _Apparatus in the paper: coil 90 mm diameter, 7000 turns; ADS1115 + Arduino UNO;
-webcam at ~30 fps perpendicular to the plane of the swing._
+webcam or smartphone camera at ~30 fps perpendicular to the plane of the swing._
 
 </details>
 
@@ -149,8 +152,8 @@ voltage off a common time axis. The two peaks are visibly apart.
 > _"If speed alone cannot explain it, what else must matter?"_
 
 - **High school** — keep it qualitative: flux depends on _where_ the magnet is.
-- **College** — go quantitative with $\varepsilon = -N(d\Phi/dx)v$ and the
-  $\varepsilon/v$ plot.
+- **College** — go quantitative with $\varepsilon = -N(d\Phi/ds)|\mathbf{v}|$ and the
+  $\varepsilon/|\mathbf{v}|$ plot.
 
 </details>
 
