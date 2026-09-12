@@ -16,29 +16,37 @@ analysis takes t = 0 to be the first video frame in which it appears lit.
 
 **ADS1115 → Arduino UNO**
 
-| ADS1115 | UNO   |                  |
-| ------- | ----- | ---------------- |
-| `VDD`   | `5V`  |                  |
-| `GND`   | `GND` |                  |
-| `SCL`   | `A5`  |                  |
-| `SDA`   | `A4`  |                  |
-| `ADDR`  | `GND` | → address `0x48` |
-| `A0`    | —     | coil lead 1      |
-| `A1`    | —     | coil lead 2      |
+| ADS1115 | UNO   |                                          |
+| ------- | ----- | ---------------------------------------- |
+| `VDD`   | `5V`  |                                          |
+| `GND`   | `GND` |                                          |
+| `SCL`   | `A5`  |                                          |
+| `SDA`   | `A4`  |                                          |
+| `ADDR`  | `GND` | → address `0x48`                         |
+| `A0`    | —     | coil lead 1, **and one leg of the 1 kΩ** |
+| `A1`    | —     | coil lead 2, **and the other leg**       |
+
+The **1 kΩ sits across the coil, not in series with it**. On the breadboard
+each leg goes into its own row, and that row also takes the coil lead and the
+wire to the ADC — three things in one row, which is what puts them on the same
+node. It loads the coil so it cannot ring, and gives the ADS1115's differential
+inputs a DC path instead of leaving them floating.
 
 **LED** → `D7` through a 220–330 Ω resistor → `GND`.
 It must be **inside the camera frame**.
 
 ```
         ┌──────────────┐
- coil ──┤A0        VDD ├── 5V
-        │   ADS1115    │
- coil ──┤A1        GND ├── GND
-        │   (0x48)     │
-        │  SCL     SDA │
-        └───┬───────┬──┘
-           A5      A4      D7 ──[220Ω]──▶|── GND
-                                      sync LED
+ 5V ────┤VDD           │
+GND ────┤GND           │            A0 ──┬──────────┬
+ A5 ────┤SCL  ADS1115  │                 │          │
+ A4 ────┤SDA   (0x48)  │              [ 1 kΩ ]   ( coil )
+GND ────┤ADDR          │                 │          │
+        │    A0    A1  ├──────▶     A1 ──┴──────────┴
+        └──────────────┘
+
+                    D7 ──[220 Ω]──▶|── GND
+                                 sync LED
 ```
 
 ---
@@ -160,15 +168,16 @@ voltage off a common time axis. The two peaks are visibly apart.
 
 <br>
 
-| Symptom                                             | Fix                                                                             |
-| --------------------------------------------------- | ------------------------------------------------------------------------------- |
-| LED blinks fast forever (`ERROR,ADS1115_NOT_FOUND`) | ADC not answering at `0x48` — check `SDA`→`A4`, `SCL`→`A5`, power, `ADDR`→`GND` |
-| Garbage characters in Serial Monitor                | Set baud to **115200**                                                          |
-| Typing `start` does nothing                         | Set line ending to **Newline**                                                  |
-| Voltage flat at ±1024 mV                            | Clipping — use `GAIN_TWO`                                                       |
-| Only noise around zero                              | Coil not across `A0`/`A1`, or magnet passing too far from the coil              |
-| "LED was already lit when recording started"        | Recording began after `start` — re-run, recording first                         |
-| "LED never crossed the on-threshold"                | LED out of frame, or the marked LED box misses it                               |
+| Symptom                                             | Fix                                                                                               |
+| --------------------------------------------------- | ------------------------------------------------------------------------------------------------- |
+| LED blinks fast forever (`ERROR,ADS1115_NOT_FOUND`) | ADC not answering at `0x48` — check `SDA`→`A4`, `SCL`→`A5`, power, `ADDR`→`GND`                   |
+| Garbage characters in Serial Monitor                | Set baud to **115200**                                                                            |
+| Typing `start` does nothing                         | Set line ending to **Newline**                                                                    |
+| Voltage flat at ±1024 mV                            | Clipping — use `GAIN_TWO`                                                                         |
+| Only noise around zero                              | Coil not across `A0`/`A1`, or magnet passing too far from the coil                                |
+| Signal much smaller than expected                   | The 1 kΩ is in series with the coil instead of across it — both legs share a row with a coil lead |
+| "LED was already lit when recording started"        | Recording began after `start` — re-run, recording first                                           |
+| "LED never crossed the on-threshold"                | LED out of frame, or the marked LED box misses it                                                 |
 
 </details>
 
