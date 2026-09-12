@@ -1,0 +1,298 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>faraday-cv · colour-segmentation video analysis</title>
+    <link
+      rel="icon"
+      href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Ctext y='26' font-size='26'%3E%F0%9F%A7%B2%3C/text%3E%3C/svg%3E"
+    />
+    <link rel="stylesheet" href="/static/style.css" />
+  </head>
+  <body>
+    <header>
+      <h1>faraday-cv</h1>
+      <p>
+        Tracks the pendulum magnet by colour segmentation
+        <strong>inside your browser</strong>, syncs it to a separately uploaded
+        Arduino voltage log using an <strong>LED timing marker</strong>, and
+        produces publication-ready figures.
+        <strong>The video is never sent to the server</strong> — tracking
+        happens on this page; only the physics and the plots are computed
+        server-side.
+      </p>
+    </header>
+
+    <main>
+      <section class="viewer">
+        <div class="toolbar">
+          <span class="label">Click mode</span>
+          <button class="mode active" data-mode="magnet">
+            ① Pick magnet colour
+          </button>
+          <button class="mode" data-mode="coil">② Coil position</button>
+          <button class="mode" data-mode="scale">③ Length scale (drag)</button>
+          <button class="mode" data-mode="led">④ LED region (drag)</button>
+          <button class="mode" data-mode="roi">⑤ Search region (drag)</button>
+          <button id="clear-roi" class="ghost">Clear search region</button>
+        </div>
+        <canvas id="canvas" width="640" height="360"></canvas>
+        <div class="frame-bar">
+          <input
+            id="frame-slider"
+            type="range"
+            min="0"
+            max="100"
+            value="0"
+            step="0.1"
+          />
+          <span id="frame-label">t = 0.00 s</span>
+          <label
+            ><input id="show-mask" type="checkbox" checked /> Mask
+            preview</label
+          >
+        </div>
+        <p id="hint" class="hint">Choose a video to begin.</p>
+
+        <div id="scale-panel" class="scale-panel" hidden>
+          <span class="scale-icon">📏</span>
+          <span id="scale-px" class="scale-px"></span>
+          <label class="scale-entry"
+            >is really
+            <input
+              id="scale-mm"
+              type="number"
+              step="0.1"
+              min="0"
+              placeholder="?"
+            />
+            mm</label
+          >
+          <span id="scale-result" class="scale-result"></span>
+          <button id="scale-clear" class="ghost" type="button">Clear</button>
+        </div>
+      </section>
+
+      <section class="panel">
+        <details open>
+          <summary>1. Video</summary>
+          <div class="file-row">
+            <input
+              id="video-file"
+              class="file-input"
+              type="file"
+              accept="video/*"
+            />
+            <label class="file-button" for="video-file">Choose video</label>
+            <span id="video-file-name" class="file-name">No file chosen</span>
+          </div>
+          <p class="tip">
+            Played and analysed right here on this computer. Nothing is
+            uploaded, so there is no size limit and the footage never leaves
+            this browser.
+          </p>
+          <dl id="video-info" class="info"></dl>
+
+          <div class="range-block">
+            <span class="range-title">Analysis range</span>
+            <div class="grid2">
+              <label
+                >Start (s)
+                <div class="range-row">
+                  <input
+                    id="trim-start"
+                    type="number"
+                    step="0.01"
+                    min="0"
+                    placeholder="from the start"
+                  />
+                  <button id="trim-start-here" class="ghost" type="button">
+                    Use current
+                  </button>
+                </div>
+              </label>
+              <label
+                >End (s)
+                <div class="range-row">
+                  <input
+                    id="trim-end"
+                    type="number"
+                    step="0.01"
+                    min="0"
+                    placeholder="to the end"
+                  />
+                  <button id="trim-end-here" class="ghost" type="button">
+                    Use current
+                  </button>
+                </div>
+              </label>
+            </div>
+            <p class="tip">
+              Analyse only part of the clip — drag the slider to a moment, then
+              press “Use current”. Trimming off the setup at the start (hands in
+              frame) and whatever follows the swing makes tracking both faster
+              and harder to derail. The LED is still read from the very start of
+              the clip whatever you set here, so the sync to the voltage log
+              keeps working even when the flash falls before your start point.
+            </p>
+            <p id="range-info" class="stats"></p>
+          </div>
+        </details>
+
+        <details open>
+          <summary>2. Colour range (segmentation)</summary>
+          <p class="tip">
+            Click the magnet on the canvas and an HSV range is picked for you;
+            fine-tune it with the sliders. The pixels tinted green are the ones
+            being read as “the magnet”.
+          </p>
+          <div class="sliders" id="color-sliders"></div>
+          <div class="grid2">
+            <label
+              >Min size (px)
+              <input id="min-area" type="number" value="40" min="1"
+            /></label>
+            <label
+              >Blur <input id="blur" type="number" value="5" min="0" step="2"
+            /></label>
+            <label
+              >Open <input id="open-k" type="number" value="3" min="0"
+            /></label>
+            <label
+              >Close <input id="close-k" type="number" value="7" min="0"
+            /></label>
+            <label
+              >Max jump (px/frame)
+              <input id="max-jump" type="number" min="0" placeholder="no limit"
+            /></label>
+          </div>
+          <p class="tip">
+            If tracking jumps onto something else (skin, background, a
+            reflection), set the furthest the magnet can really travel between
+            frames. Detections beyond that are ignored and the previous position
+            is kept.
+          </p>
+          <p id="seg-stats" class="stats"></p>
+        </details>
+
+        <details open>
+          <summary>3. Reference settings</summary>
+          <div class="grid2">
+            <label
+              >Coil x,y (px)
+              <input id="coil" type="text" placeholder="click to set"
+            /></label>
+            <label
+              >mm/px
+              <input id="mm-per-px" type="number" step="0.0001" value="1"
+            /></label>
+            <label
+              >Smoothing (frames)
+              <input id="smooth" type="number" value="7" min="0"
+            /></label>
+            <label
+              >LED region
+              <input id="led-roi" type="text" placeholder="drag to set"
+            /></label>
+            <label
+              >Manual t₀ (s)
+              <input
+                id="t0-video"
+                type="number"
+                step="0.001"
+                placeholder="use LED"
+            /></label>
+            <label
+              >Tracking fps
+              <input id="track-fps" type="number" value="30" min="1" step="1"
+            /></label>
+          </div>
+          <p class="tip">
+            “Tracking fps” is how many frames per second to step through. Match
+            it to the camera's actual frame rate (if you don't know it, leaving
+            it at 30 is usually fine).
+          </p>
+        </details>
+
+        <details open>
+          <summary>4. Arduino voltage file (chosen separately)</summary>
+          <div class="file-row">
+            <input
+              id="voltage-file"
+              class="file-input"
+              type="file"
+              accept=".csv,.txt,.tsv,.log"
+            />
+            <label class="file-button" for="voltage-file">Choose CSV</label>
+            <span id="voltage-file-name" class="file-name">No file chosen</span>
+          </div>
+          <div class="grid2">
+            <label
+              >Voltage unit
+              <select id="voltage-unit">
+                <option value="auto">auto</option>
+                <option value="mV">mV</option>
+                <option value="V">V</option>
+              </select>
+            </label>
+            <label
+              >Baseline window (s)
+              <input id="baseline" type="number" step="0.05" value="0.2"
+            /></label>
+          </div>
+          <dl id="voltage-info" class="info"></dl>
+        </details>
+
+        <details open>
+          <summary>5. Run</summary>
+          <label class="wide"
+            >Figure title <input id="title" type="text" placeholder="optional"
+          /></label>
+          <label class="wide"
+            >Min speed for ℰ/v (m/s)
+            <input
+              id="v-min"
+              type="number"
+              step="0.01"
+              placeholder="auto (8% of peak speed)"
+          /></label>
+          <button id="run" class="primary" disabled>Track + analyse</button>
+          <div id="progress" class="progress" hidden><div></div></div>
+          <p id="status" class="stats"></p>
+        </details>
+
+        <details id="results" open hidden>
+          <summary>6. Results</summary>
+          <table id="stats-table"></table>
+          <div id="notes"></div>
+          <div id="figures"></div>
+          <p id="downloads"></p>
+          <div id="download-error" class="note note-error" hidden></div>
+        </details>
+      </section>
+    </main>
+
+    <footer class="site-footer">
+      <p class="credit">
+        © 2026 Ui Chan Kim, Ye Geon Kim, Chan Hee Yang, Yongseok Jeong ·
+        released under the
+        <a
+          href="https://opensource.org/licenses/MIT"
+          rel="license noopener"
+          target="_blank"
+          >MIT licence</a
+        >
+      </p>
+      <p class="credit">
+        Companion software for “Beyond ‘Faster Magnet, More Voltage’: A
+        Quantitative Faraday’s Law Experiment Using Computer Vision”.
+      </p>
+    </footer>
+
+    <script src="/static/cv.js"></script>
+    <script src="/static/filecheck.js"></script>
+    <script src="/static/tracker.js"></script>
+    <script src="/static/app.js"></script>
+  </body>
+</html>

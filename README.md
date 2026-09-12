@@ -1,13 +1,14 @@
 # ⚡ faraday-arduino
 
-Arduino sketch for the Faraday's law pendulum experiment.
-Samples the coil voltage at **100 Hz** and flashes an **LED at t = 0** so the
-record lines up with a video of the swing.
+Both halves of the Faraday's law pendulum experiment, in one place.
 
-**→ [`faraday_logger/faraday_logger.ino`](faraday_logger/faraday_logger.ino)**
+|                                                                      |                                                                                                                                        |
+| -------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------- |
+| **Voltage** — [`faraday_logger/`](faraday_logger/faraday_logger.ino) | Arduino sketch. Samples the coil at **100 Hz** and flashes an **LED at t = 0**.                                                        |
+| **Video** — [`faraday-cv/`](faraday-cv/)                             | No-code colour-segmentation analysis tool. Tracks the magnet in the browser, syncs to the log off that LED, draws the paper's figures. |
 
-Video side: [faraday-cv](https://github.com/lolpopach/general-use) — the
-`faraday-cv` folder holds the no-code colour-segmentation analysis tool.
+The LED is what joins them: the sketch lights it as logging starts, and the
+analysis takes t = 0 to be the first video frame in which it appears lit.
 
 ---
 

@@ -1,0 +1,462 @@
+:root {
+  --ink: #1b1d21;
+  --muted: #6b7280;
+  --line: #d8dbe0;
+  --accent: #1f4e79;
+  --accent-soft: #e8f0f8;
+  --warn: #b3261e;
+  --bg: #f6f7f9;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  font:
+    14px/1.55 system-ui,
+    -apple-system,
+    "Segoe UI",
+    "Noto Sans KR",
+    sans-serif;
+  color: var(--ink);
+  background: var(--bg);
+}
+
+header {
+  padding: 18px 24px 10px;
+  border-bottom: 1px solid var(--line);
+  background: #fff;
+}
+
+header h1 {
+  margin: 0;
+  font-size: 20px;
+  letter-spacing: 0.02em;
+}
+
+header p {
+  margin: 6px 0 0;
+  color: var(--muted);
+  max-width: 70ch;
+}
+
+main {
+  display: grid;
+  grid-template-columns: minmax(420px, 1.2fr) minmax(360px, 0.9fr);
+  gap: 20px;
+  padding: 20px 24px 60px;
+  align-items: start;
+}
+
+@media (max-width: 980px) {
+  main {
+    grid-template-columns: 1fr;
+  }
+}
+
+.viewer,
+.panel {
+  background: #fff;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  padding: 14px;
+}
+
+canvas {
+  width: 100%;
+  height: auto;
+  background: #eceef1;
+  border-radius: 4px;
+  cursor: crosshair;
+  touch-action: none;
+}
+
+.toolbar {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  align-items: center;
+  margin-bottom: 10px;
+}
+
+.toolbar .label {
+  color: var(--muted);
+  margin-right: 4px;
+}
+
+button {
+  font: inherit;
+  padding: 5px 10px;
+  border: 1px solid var(--line);
+  border-radius: 5px;
+  background: #fff;
+  cursor: pointer;
+}
+
+button.mode.active {
+  background: var(--accent-soft);
+  border-color: var(--accent);
+  color: var(--accent);
+  font-weight: 600;
+}
+
+button.primary {
+  background: var(--accent);
+  border-color: var(--accent);
+  color: #fff;
+  font-weight: 600;
+  padding: 8px 16px;
+}
+
+button.primary:disabled {
+  background: #9aa4b0;
+  border-color: #9aa4b0;
+  cursor: not-allowed;
+}
+
+button.ghost {
+  color: var(--muted);
+}
+
+.frame-bar {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-top: 8px;
+}
+
+.frame-bar input[type="range"] {
+  flex: 1;
+}
+
+.hint {
+  color: var(--muted);
+  margin: 8px 0 0;
+  min-height: 1.4em;
+}
+
+details {
+  border-top: 1px solid var(--line);
+  padding: 10px 0;
+}
+
+details:first-of-type {
+  border-top: none;
+}
+
+summary {
+  font-weight: 600;
+  cursor: pointer;
+  margin-bottom: 8px;
+}
+
+.tip {
+  color: var(--muted);
+  margin: 0 0 8px;
+}
+
+.grid2 {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 6px 10px;
+}
+
+label {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  font-size: 12px;
+  color: var(--muted);
+}
+
+label.wide {
+  margin-bottom: 8px;
+}
+
+input,
+select {
+  font: inherit;
+  padding: 4px 6px;
+  border: 1px solid var(--line);
+  border-radius: 4px;
+  background: #fff;
+  color: var(--ink);
+}
+
+/* A file picker we can label ourselves.  The native control's button text
+   ("Choose File", or whatever the browser's own language calls it) cannot be
+   set from HTML, so the real input is visually hidden -- but still focusable
+   and operable -- behind a <label> that acts as the button. */
+.file-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.file-input {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0 0 0 0);
+  white-space: nowrap;
+  border: 0;
+}
+
+.file-button {
+  display: inline-block;
+  font-size: 14px;
+  color: var(--ink);
+  padding: 5px 10px;
+  border: 1px solid var(--line);
+  border-radius: 5px;
+  background: #fff;
+  cursor: pointer;
+}
+
+.file-button:hover {
+  border-color: var(--accent);
+  color: var(--accent);
+}
+
+.file-input:focus-visible + .file-button {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+}
+
+.file-name {
+  font-size: 12px;
+  color: var(--muted);
+  overflow-wrap: anywhere;
+}
+
+/* The measuring readout, directly under the canvas where the drag happened --
+   the real length belongs next to the line, not in a distant settings box. */
+.scale-panel {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-top: 8px;
+  padding: 8px 10px;
+  border: 1px solid #2e7d32;
+  border-radius: 6px;
+  background: #f2f8f2;
+  font-size: 13px;
+}
+
+/* `display: flex` above would otherwise beat the UA's [hidden] rule */
+.scale-panel[hidden] {
+  display: none;
+}
+
+.scale-px {
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+}
+
+.scale-entry {
+  flex-direction: row;
+  align-items: center;
+  gap: 5px;
+  font-size: 13px;
+  color: var(--ink);
+}
+
+.scale-entry input {
+  width: 90px;
+}
+
+.scale-result {
+  color: var(--muted);
+  font-variant-numeric: tabular-nums;
+}
+
+.scale-panel button {
+  margin-left: auto;
+}
+
+.range-block {
+  margin-top: 10px;
+}
+
+.range-title {
+  display: block;
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--ink);
+  margin-bottom: 4px;
+}
+
+.range-row {
+  display: flex;
+  gap: 4px;
+  align-items: center;
+}
+
+.range-row input {
+  flex: 1;
+  min-width: 0;
+}
+
+.range-row button {
+  white-space: nowrap;
+  font-size: 12px;
+  padding: 4px 8px;
+}
+
+.sliders {
+  display: grid;
+  gap: 4px;
+  margin-bottom: 10px;
+}
+
+.sliders .row {
+  display: grid;
+  grid-template-columns: 52px 1fr 44px;
+  align-items: center;
+  gap: 8px;
+  font-size: 12px;
+}
+
+.sliders .row span:last-child {
+  text-align: right;
+  color: var(--muted);
+  font-variant-numeric: tabular-nums;
+}
+
+.info {
+  display: grid;
+  grid-template-columns: auto 1fr;
+  gap: 2px 12px;
+  margin: 8px 0 0;
+  font-size: 12px;
+}
+
+.info dt {
+  color: var(--muted);
+}
+
+.info dd {
+  margin: 0;
+  font-variant-numeric: tabular-nums;
+}
+
+.stats {
+  font-size: 12px;
+  color: var(--muted);
+  min-height: 1.3em;
+  margin: 8px 0 0;
+}
+
+.progress {
+  height: 6px;
+  background: #e6e8ec;
+  border-radius: 3px;
+  overflow: hidden;
+  margin-top: 8px;
+}
+
+.progress div {
+  height: 100%;
+  width: 0;
+  background: var(--accent);
+  transition: width 0.2s;
+}
+
+table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 12px;
+  margin-bottom: 10px;
+}
+
+td {
+  padding: 3px 6px;
+  border-bottom: 1px solid var(--line);
+}
+
+td:first-child {
+  color: var(--muted);
+}
+
+td:last-child {
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+}
+
+#figures figure {
+  margin: 0 0 16px;
+}
+
+#figures img {
+  width: 100%;
+  border: 1px solid var(--line);
+  border-radius: 4px;
+  display: block;
+}
+
+#figures figcaption {
+  font-size: 12px;
+  color: var(--muted);
+  padding: 6px 2px 0;
+  line-height: 1.4;
+}
+
+.note {
+  background: #fff6e5;
+  border-left: 3px solid #e0a300;
+  padding: 6px 8px;
+  margin-bottom: 6px;
+  font-size: 12px;
+}
+
+.note-error {
+  background: #fdecea;
+  border-left-color: var(--warn);
+}
+
+.error {
+  color: var(--warn);
+  font-weight: 600;
+}
+
+#downloads a {
+  margin-right: 10px;
+  color: var(--accent);
+}
+
+.path-row {
+  display: flex;
+  gap: 6px;
+  margin-top: 6px;
+}
+
+.path-row input {
+  flex: 1;
+  min-width: 0;
+}
+
+/* Kept out of the way of the tool itself: the credit belongs on the page, but
+   under it, not competing with the controls. */
+.site-footer {
+  border-top: 1px solid var(--line);
+  background: #fff;
+  padding: 14px 24px 20px;
+}
+
+.site-footer .credit {
+  margin: 0 0 4px;
+  font-size: 12px;
+  color: var(--muted);
+  max-width: 80ch;
+}
+
+.site-footer a {
+  color: var(--accent);
+}

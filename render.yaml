@@ -1,0 +1,22 @@
+# Render Blueprint: https://render.com/docs/blueprint-spec
+#
+# This lives at the repo root (not inside faraday-cv/) because that is where
+# Render's Blueprint feature looks by default -- "New +" -> "Blueprint" ->
+# point at this repo, and `rootDir` below scopes the actual build/start to
+# the faraday-cv/ subdirectory. Free tier: 512 MB RAM is plenty since the
+# server never decodes video.
+services:
+  - type: web
+    name: faraday-cv
+    runtime: python
+    plan: free
+    rootDir: faraday-cv
+    buildCommand: pip install -r requirements-web.txt
+    startCommand: gunicorn --bind 0.0.0.0:$PORT --workers 2 --threads 4 --timeout 60 wsgi:app
+    envVars:
+      - key: FARADAYCV_LOCAL_MODE
+        value: "0"
+      - key: FARADAYCV_SESSION_TTL_MINUTES
+        value: "60"
+      - key: PYTHON_VERSION
+        value: "3.12.5"

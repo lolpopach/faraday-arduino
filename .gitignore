@@ -8,7 +8,22 @@ build/
 *.mp4
 *.mov
 *.webm
+# ...but the analysis tool's test fixtures are source, not captured data
+!faraday-cv/tests/data/*.csv
 
-# Editor / OS noise
+# Python (faraday-cv)
+__pycache__/
+*.pyc
+*.egg-info/
+.pytest_cache/
+.ruff_cache/
+.venv/
+
+# Node (the browser unit tests)
+node_modules/
+
+# Secrets and editor / OS noise
+.env
+.env.*
 .vscode/
 .DS_Store
