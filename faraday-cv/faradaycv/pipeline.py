@@ -135,7 +135,7 @@ def run_analysis(
 
 
 def analyse_track(track: Track, cfg: AnalysisConfig) -> AnalysisResult:
-    """Read the log, synchronise, derive E/v -- given a track from anywhere.
+    """Read the log, synchronise, derive E/|v| -- given a track from anywhere.
 
     The track may come from :func:`track_video` here, or from the browser,
     which segments the video on the student's own machine and sends only the
@@ -270,7 +270,7 @@ def export_results(result: AnalysisResult, outdir: str | Path) -> dict[str, str]
         names = ["t_s", "voltage_V", "speed_m_s", "emf_over_v_Vs_per_m"]
         cols = [s.t, s.voltage, s.speed, s.emf_over_v]
         if s.clamped is not None:
-            # 1 where v was held at the floor, so E/v there is E/v_min
+            # 1 where the speed was floored, so the ratio reads E/v_min
             names.append("emf_over_v_floored")
             cols.append(s.clamped.astype(int))
         if s.distance is not None:

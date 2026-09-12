@@ -80,8 +80,10 @@ def test_ascii_captions_never_need_a_fallback_font():
 
 
 def test_a_korean_title_renders_without_missing_glyph_warnings():
-    """Korean is the UI language, so Korean titles must not come out as boxes."""
-    title = "진자 스윙 - 유도전압"
+    """A student may well type a Korean figure title, and it must not come out
+    as a row of tofu boxes.  Escaped rather than literal so this file stays
+    ASCII; it reads "pendulum swing - induced voltage"."""
+    title = "\uc9c4\uc790 \uc2a4\uc719 - \uc720\ub3c4\uc804\uc555"
     if needs_cjk_font(title):
         pytest.skip("no Hangul-capable font installed on this machine")
     with warnings.catch_warnings(record=True) as caught:

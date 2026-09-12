@@ -1,48 +1,57 @@
 # faraday-cv
 
-패러데이 법칙 진자 실험용 **컬러 세그멘테이션 영상 분석 도구**.
+**Colour-segmentation video analysis** for the Faraday's law pendulum
+experiment.
 
-진자 자석 영상에서 색으로 자석을 추적해 **위치·순간속도**를 뽑고, 따로 올린
-**아두이노 전압 로그**를 LED 타이밍 신호로 동기화해서, 하나의 시간축 위에
-논문용 그래프를 그립니다.
+It tracks the pendulum magnet by colour to recover its **position and
+instantaneous speed**, synchronises a separately uploaded **Arduino voltage
+log** using an LED timing marker, and draws the paper's figures on one shared
+time axis.
 
-**영상 추적은 브라우저 안에서** 일어납니다 (컬러 세그멘테이션을 JS로 재구현).
-서버는 그 결과(좌표 몇 개)와 전압 로그를 받아 물리량을 계산하고 그래프만
-그립니다 — 영상 자체는 어디로도 업로드되지 않습니다. 그래서 이 서버는
-가벼운 무료 티어(Render, Fly.io 등)에 그대로 올려 여러 사람이 같이 쓸 수
-있습니다. 자기 컴퓨터에서만 쓸 거라면 그냥 로컬에서 실행해도 됩니다.
+**The tracking happens inside your browser** (the colour segmentation is
+reimplemented in JavaScript). The server receives only the result — a few
+coordinates per frame — plus the voltage log, and computes the physics and the
+figures. The video itself is never uploaded anywhere. That is what lets this
+server run on a small free tier (Render, Fly.io) and be shared by a class. If
+you only want it on your own machine, run it locally instead.
 
-> 관련 논문: _Beyond "Faster Magnet, More Voltage": A Quantitative Faraday's Law
-> Experiment Using Computer Vision_ — 코일을 최하점이 아니라 **회전점(turning
-> point) 근처**에 두면 최대 속도 지점과 최대 유도전압 지점이 분리되고,
-> "빠를수록 전압이 크다"는 규칙이 깨지는 것을 학생이 자기 데이터로 확인합니다.
-
----
-
-## 무엇이 나오나
-
-| 산출물                        | 내용                                                                        |
-| ----------------------------- | --------------------------------------------------------------------------- |
-| `fig2_motion_and_voltage.png` | 코일-자석 거리 / 속도 / 유도전압을 같은 시간축에 (논문 Fig. 2)              |
-| `fig3_emf_over_velocity.png`  | ℰ 와 ℰ/v 비교 — ℰ/v ∝ −N dΦ/dx (논문 Fig. 3, Eq. 3)                         |
-| `diagnostics.png`             | 추적 품질 점검: 중심좌표, 덩어리 면적, LED 신호와 문턱값                    |
-| `synced.csv`                  | 동기화된 표: `t, voltage, speed, distance, emf_over_v` — 엑셀로 재분석 가능 |
-| `motion.csv`, `track.csv`     | 물리단위 운동 / 프레임별 원시 추적값                                        |
-| `summary.json`                | 두 정점의 시각과 값, 검출률, 사용한 설정 전부                               |
+> Companion paper: _Beyond "Faster Magnet, More Voltage": A Quantitative
+> Faraday's Law Experiment Using Computer Vision_ — putting the coil **near a
+> turning point** rather than at the lowest point separates the instant of
+> maximum speed from the instant of maximum induced voltage, so students can
+> watch the "faster means bigger" rule break in their own data.
 
 ---
 
-## 웹으로 바로 쓰기
+## What comes out
 
-누군가 이미 배포해 둔 주소가 있다면 그냥 브라우저로 열면 됩니다. 설치할 것도
-없고, 영상은 그 사람의 서버로도 전송되지 않습니다 (브라우저 안에서만 처리).
+| Output                        | Contents                                                                               |
+| ----------------------------- | -------------------------------------------------------------------------------------- |
+| `fig2_motion_and_voltage.png` | Coil distance / speed / induced voltage on one time axis (the paper's Fig. 2)          |
+| `fig3_emf_over_velocity.png`  | ℰ beside ℰ/\|**v**\| — which by Eq. (3) tracks −N dΦ/ds (the paper's Fig. 3)           |
+| `diagnostics.png`             | Tracking quality: centroid, blob area, LED trace and its threshold                     |
+| `synced.csv`                  | The synchronised table: `t, voltage, speed, distance, emf_over_v` — reanalyse anywhere |
+| `motion.csv`, `track.csv`     | Motion in SI units / raw per-frame tracking                                            |
+| `summary.json`                | Both peak instants and values, detection rate, and every setting used                  |
 
-직접 배포하려면 [배포](#배포-웹-서비스로-올리기) 절을 보세요.
+A record longer than about four seconds also gets `*_detail.png` copies of
+Fig. 2 and Fig. 3, zoomed to three periods around the strongest |ℰ| peak —
+ten swings drawn at figure width are a picket fence.
 
-## 로컬에서 웹 UI 실행
+---
 
-가상환경을 만들어 설치하는 것을 권합니다 (macOS 기본 파이썬에서 `pip install`이
-`externally-managed-environment` 오류를 내는 것을 피할 수 있습니다).
+## Using it on the web
+
+If someone has already deployed it, just open the address in a browser.
+Nothing to install, and the video is not sent to their server either — it is
+processed entirely in your own browser.
+
+To deploy your own, see [Deployment](#deployment).
+
+## Running the web UI locally
+
+Use a virtual environment. (It also avoids the `externally-managed-environment`
+error that the system Python on macOS gives for `pip install`.)
 
 ```bash
 cd faraday-cv
@@ -52,47 +61,60 @@ python3 -m pip install -r requirements.txt
 python3 -m faradaycv serve
 ```
 
-- 두 번째 실행부터는 `source .venv/bin/activate` 후 마지막 줄만 하면 됩니다.
-- Windows는 `python3` 대신 `py`, 활성화는 `.venv\Scripts\activate`.
-- macOS·Linux에 `pip` 명령이 없어도 됩니다. 항상 `python3 -m pip` 를 쓰세요.
-- 아래 명령들은 **`faraday-cv` 폴더 안에서** 실행합니다.
-  `No module named faradaycv` 오류는 대부분 다른 폴더에 있다는 뜻입니다.
+- From the second run on, `source .venv/bin/activate` and then the last line.
+- On Windows use `py` instead of `python3`, and `.venv\Scripts\activate`.
+- You do not need a `pip` command on macOS or Linux — always use `python3 -m pip`.
+- Run these **from inside the `faraday-cv` folder**. `No module named faradaycv`
+  almost always means you are somewhere else.
 
-터미널에 뜨는 주소(기본 `http://127.0.0.1:8000`)를 브라우저에서 열고, 끌 때는
-터미널에서 `Ctrl+C`. 포트가 이미 쓰이면 `--port 8080` 처럼 바꾸세요.
+Open the address printed in the terminal (`http://127.0.0.1:8000` by default);
+`Ctrl+C` stops it. If the port is taken, pass `--port 8080`.
 
-브라우저에서 순서대로:
+In the browser, in order:
 
-1. **영상 선택** — mp4/mov/webm 등. **업로드가 아닙니다**: 이 컴퓨터에서 바로
-   재생·분석하므로 용량 제한이 없고 영상은 이 브라우저를 벗어나지 않습니다
-   - **분석 구간(Analysis range)** — 슬라이더로 원하는 순간에 맞춘 뒤
-     "Use current"를 누르면 시작/끝이 잡힙니다. 앞뒤의 준비 장면(손이 화면에
-     들어오는 구간 등)을 잘라내면 추적이 빨라지고 엉뚱한 물체로 튈 일도
-     줄어듭니다. CLI의 `--start-frame`/`--end-frame` 에 해당합니다.
-     **LED는 구간과 무관하게 항상 영상 맨 앞부터 읽습니다** — LED 점등은
-     보통 녹화 직후라 잘라내려는 구간과 겹치는데, 그게 전압 로그와
-     동기화하는 기준이라서 구간을 그 뒤로 잡아도 싱크가 유지됩니다
-2. **자석 클릭** → HSV 범위 자동 설정, 슬라이더로 미세조정
-   (초록색으로 칠해진 부분이 "자석으로 인식된 픽셀")
-3. **코일 위치 클릭**, **LED 영역 드래그**, 촬영한 카메라의 **fps** 확인
-   - **길이 보정** — ③ 모드로 길이를 아는 물체(자, 코일 지름 등) 위를
-     드래그하면 캔버스 아래에 `256.0 px is really [   ] mm` 이 뜹니다.
-     여기에 **실제 길이를 입력해야** mm/px가 정해집니다. 입력 전에는 아무것도
-     바뀌지 않으니, 드래그만 하고 지나쳐서 엉뚱한 배율이 적용될 일은 없습니다
-   - 보정이 끝난 뒤에 다시 드래그하면 그 길이를 **mm로 재어줍니다**
-     (`≈ 150.0 mm at the current scale`). 다시 보정하려면 새 값을 입력하세요
-4. **아두이노 전압 파일 선택** — 영상과 별개로 따로 선택합니다
-5. **추적 + 분석 실행** → 브라우저가 영상을 끝까지 훑어 좌표를 뽑고(진행률
-   표시), 그 결과만 서버로 보내 그래프 2장 + 진단 그래프, CSV 다운로드
+1. **Choose a video** — mp4/mov/webm and so on. This is **not an upload**: the
+   file is played and analysed on this machine, so there is no size limit and
+   the video never leaves the browser.
+   - **Analysis range** — scrub to the moment you want and press "Use current"
+     to set the start and end. Trimming the setup at either end (a hand
+     entering the frame, for instance) makes tracking faster and stops it
+     jumping to the wrong object. Equivalent to `--start-frame` /
+     `--end-frame` on the CLI.
+     **The LED is always read from the very beginning of the clip**, whatever
+     the range is — the flash usually happens right after recording starts,
+     which is exactly the part you want to trim, and it is the reference that
+     ties the video to the voltage log. So the synchronisation survives a
+     range that begins after it.
+2. **Click the magnet** → an HSV range is picked for you; refine with the
+   sliders. (The green overlay is "pixels currently counted as the magnet".)
+3. **Click the coil centre**, **drag a box over the LED**, and check the
+   camera's **fps**.
+   - **Length calibration** — in mode ③, drag across something whose real size
+     you know (a ruler, the coil). Under the canvas you get
+     `256.0 px is really [   ] mm`. **You have to type the real length** for a
+     scale to exist. Nothing is applied until you do, so a stray drag cannot
+     silently set a wrong scale.
+   - The readout also reports the **whole frame width** at that scale
+     (`whole frame ≈ 90.6 cm wide`). That is the number to sanity-check: a
+     mistyped length is the one calibration error with no other symptom, since
+     every distance and speed comes out wrong by the same factor and the curves
+     keep their shape.
+   - Drag again after calibrating and it simply **measures** that length in mm
+     (`≈ 150.0 mm at the current scale`). Type a new value to recalibrate.
+4. **Choose the Arduino voltage file** — separately from the video.
+5. **Track + analyse** → the browser walks the whole clip extracting
+   coordinates (with a progress bar) and sends only those to the server, which
+   returns the figures, the diagnostics plot and the CSVs.
 
-세그멘테이션이 잘 안 될 때는 ⑤ **검색 영역**을 드래그해 자석이 지나가는
-구역만 남기면 배경의 비슷한 색을 무시할 수 있습니다.
+If segmentation struggles, drag a **search region** in ⑤ around just the strip
+the magnet passes through; everything of a similar colour outside it is then
+ignored.
 
-## 1분 체험 (장비 없이)
+## A one-minute try, with no apparatus
 
-명령줄용 합성 데이터셋(영상 + 전압 로그 + 정답값)을 만들어서 CLI 흐름을
-그대로 돌려봅니다. 첫 명령이 `example-data/pendulum.mp4` 와 `voltage.csv` 를
-만듭니다. (이 둘을 웹 UI에 그대로 올려도 됩니다.)
+Generate a synthetic dataset (video + voltage log + ground truth) and run the
+whole CLI flow on it. The first command writes `example-data/pendulum.mp4` and
+`voltage.csv`; you can also drop those two straight into the web UI.
 
 ```bash
 python3 -m faradaycv.synthetic example-data
@@ -104,7 +126,7 @@ python3 -m faradaycv analyze example-data/pendulum.mp4 \
     -o example-data/out
 ```
 
-출력 예시:
+Output:
 
 ```
 LED onset       : frame 6 -> t0 = 0.200 s
@@ -113,41 +135,41 @@ max |emf|       : 20.61 mV at t = 1.534 s
 peak separation : -0.190 s (speed at the emf peak: 0.453 m/s)
 ```
 
-최대 속도 시각과 최대 전압 시각이 **0.19초 어긋나 있고**, 전압이 최대인 순간의
-속도는 최대 속도의 67 %, 반대로 속도가 최대일 때 전압은 정점의 7 %밖에 안 됩니다.
-논문이 말하는 바로 그 결과입니다.
+The two peaks are **0.19 s apart**; at the voltage peak the magnet is moving at
+67 % of its top speed, and at top speed the voltage is only 7 % of its peak.
+That is the paper's result.
 
-> 스윙이 여러 번 들어간 기록에서는 최대 속도 지점이 여러 개라서, 비교에 쓰는
-> "최대 속도 시각"은 **전압 정점에 가장 가까운** 최대 속도 지점으로 잡습니다.
+> A record covering several swings has several near-identical speed maxima, so
+> the "time of maximum speed" used for the comparison is the one **nearest the
+> voltage peak** — otherwise it would jump between swings on noise alone.
 
-## 배포 (웹 서비스로 올리기)
+## Deployment
 
-서버는 영상을 다루지 않으므로 (numpy/scipy/matplotlib/flask 뿐, OpenCV·ffmpeg
-없음) 아주 작은 인스턴스로 충분합니다.
+The server never touches video (numpy/scipy/matplotlib/flask only — no OpenCV,
+no ffmpeg), so a very small instance is enough.
 
-**Render** — 이 저장소를 GitHub에 두고, Render에서 "New +" → "Blueprint" →
-이 저장소 선택. **저장소 루트**의 `render.yaml`(이 `faraday-cv/` 폴더 밖,
-`faraday-arduino/render.yaml`)을 Render가 자동으로 인식하고, 그 안의 `rootDir`
-설정이 실제 빌드는 `faraday-cv/` 안에서 하도록 지정합니다. 무료 플랜으로
-충분합니다.
+**Render** — put this repository on GitHub, then in Render pick "New +" →
+"Blueprint" → this repository. Render finds `render.yaml` at the **repository
+root** (outside this `faraday-cv/` folder, at `faraday-arduino/render.yaml`),
+and the `rootDir` in it points the build at `faraday-cv/`. The free plan is
+enough.
 
-> Render가 `render.yaml`을 못 찾고 Dockerfile을 찾다 실패하면("open
-> Dockerfile: no such file or directory"), Blueprint가 아니라 "New +" →
-> "Web Service"로 직접 만든 경우일 수 있습니다. 그럴 땐 서비스 설정에서
-> **Root Directory**를 `faraday-cv`로, **Runtime/Environment**를 `Python 3`
-> 으로, **Build Command**를 `pip install -r requirements-web.txt`, **Start
-> Command**를 `gunicorn --bind 0.0.0.0:$PORT --workers 2 --threads 4 --timeout 60 wsgi:app`
-> 로 직접 지정하세요.
+> If Render cannot find `render.yaml` and fails looking for a Dockerfile
+> ("open Dockerfile: no such file or directory"), you probably created a
+> "Web Service" by hand rather than a Blueprint. Set **Root Directory** to
+> `faraday-cv`, **Runtime** to `Python 3`, **Build Command** to
+> `pip install -r requirements-web.txt`, and **Start Command** to
+> `gunicorn --bind 0.0.0.0:$PORT --workers 2 --threads 4 --timeout 60 wsgi:app`.
 
 **Fly.io**:
 
 ```bash
 cd faraday-cv
-fly launch   # Dockerfile과 fly.toml을 찾아 그대로 씁니다
+fly launch   # finds the Dockerfile and fly.toml and uses them as they are
 fly deploy
 ```
 
-**Docker (직접 아무 곳에나)**:
+**Docker, anywhere**:
 
 ```bash
 cd faraday-cv
@@ -155,22 +177,28 @@ docker build -t faraday-cv .
 docker run -p 8000:8000 faraday-cv
 ```
 
-세 방법 모두 `FARADAYCV_LOCAL_MODE=0` 이 설정됩니다 — 서버가 영상을 대신
-디코딩해 주는 기능(로컬 전용, 아래 [영상 형식](#영상-형식) 참고)이 꺼지고,
-브라우저 추적 화면만 나옵니다. 다른 환경변수:
+All three set `FARADAYCV_LOCAL_MODE=0`, which turns off the server-side video
+decoding (a local-only feature — see [Video formats](#video-formats)) and
+leaves only the browser-tracking page. The other variables:
 
-| 환경변수                        | 뜻                                                    | 기본값          |
-| ------------------------------- | ----------------------------------------------------- | --------------- |
-| `FARADAYCV_LOCAL_MODE`          | `0`이면 공개 배포 모드 (서버 영상 처리 기능 비활성화) | `1` (로컬)      |
-| `FARADAYCV_SESSION_TTL_MINUTES` | 실행 결과(그래프·CSV) 보관 시간. 지나면 자동 삭제     | `1440` (24시간) |
+| Variable                        | Meaning                                                                | Default       |
+| ------------------------------- | ---------------------------------------------------------------------- | ------------- |
+| `FARADAYCV_LOCAL_MODE`          | `0` = public mode (server-side video handling disabled)                | `1` (local)   |
+| `FARADAYCV_SESSION_TTL_MINUTES` | How long a run's figures and CSVs are kept before a sweep deletes them | `1440` (24 h) |
 
-작은 무료 인스턴스에 여러 사람이 몰릴 수 있으니 `FARADAYCV_SESSION_TTL_MINUTES`
-를 60 정도로 짧게 두는 것을 권합니다 (`render.yaml`/`fly.toml`에 이미 반영).
+A small free instance can be shared by a whole class, so keeping
+`FARADAYCV_SESSION_TTL_MINUTES` down at around 60 is sensible — `render.yaml`
+and `fly.toml` already do.
 
-## 명령줄 (CLI, 로컬 전용)
+> Results live on disk under that session id and are read back from there, so
+> they survive the server running more than one worker process. They do **not**
+> survive a restart: a free instance that spins down loses them, and the page
+> then says so and asks you to run the analysis again.
 
-CLI는 **서버가 아니라 OpenCV로 직접 영상을 디코딩**합니다 — 웹 UI의
-브라우저 추적과는 별개의, 스크립팅·일괄 처리용 경로입니다.
+## Command line (local only)
+
+The CLI **decodes video itself with OpenCV** rather than in a browser — a
+separate path from the web UI, meant for scripting and batch work.
 
 ```bash
 python3 -m faradaycv info swing.mp4
@@ -181,41 +209,62 @@ python3 -m faradaycv analyze swing.mp4 --voltage log.csv --hsv ... -o out/
 python3 -m faradaycv serve
 ```
 
-| 명령      | 하는 일                                    |
-| --------- | ------------------------------------------ |
-| `info`    | fps, 프레임 수, 해상도                     |
-| `doctor`  | 안 열리는 영상의 원인 진단                 |
-| `frame`   | 한 프레임을 이미지로 저장 (색 좌표 찾기용) |
-| `pick`    | 지정한 픽셀에서 HSV 범위 추정              |
-| `track`   | 프레임별 중심좌표 CSV                      |
-| `analyze` | 전체 분석: 그래프 + 표 + 요약              |
-| `serve`   | 웹 UI                                      |
+| Command   | What it does                                             |
+| --------- | -------------------------------------------------------- |
+| `info`    | fps, frame count, resolution                             |
+| `doctor`  | Diagnoses a video that will not open                     |
+| `frame`   | Saves one frame as an image (to find colour coordinates) |
+| `pick`    | Estimates an HSV range at a given pixel                  |
+| `track`   | Per-frame centroids as CSV                               |
+| `analyze` | The whole analysis: figures, tables, summary             |
+| `serve`   | The web UI                                               |
 
-`analyze` 주요 옵션:
+Main options for `analyze`:
 
-| 옵션                                                            | 뜻                                                          |
-| --------------------------------------------------------------- | ----------------------------------------------------------- |
-| `--hsv h_lo,h_hi,s_lo,s_hi,v_lo,v_hi`                           | 색 범위 (OpenCV HSV, 색상 0–179). `h_lo > h_hi`면 빨강 순환 |
-| `--roi x,y,w,h`                                                 | 검색 영역 제한                                              |
-| `--min-area`, `--blur`, `--open`, `--close`                     | 마스크 정리 파라미터                                        |
-| `--led-roi x,y,w,h`                                             | LED 동기화 영역 (없으면 `--t0-video`로 수동 지정)           |
-| `--mm-per-px` 또는 `--scale-line x0,y0,x1,y1 --scale-length mm` | 길이 보정                                                   |
-| `--coil x,y`                                                    | 코일 중심 (거리 그래프에 필요)                              |
-| `--smooth`                                                      | Savitzky–Golay 창 크기(프레임). 속도 미분 전 위치 평활화    |
-| `--v-min`                                                       | 이 속도 미만에서는 ℰ/v를 그리지 않음 (0으로 나누기 방지)    |
+| Option                                                         | Meaning                                                                 |
+| -------------------------------------------------------------- | ----------------------------------------------------------------------- |
+| `--hsv h_lo,h_hi,s_lo,s_hi,v_lo,v_hi`                          | Colour range (OpenCV HSV, hue 0–179). `h_lo > h_hi` wraps around red    |
+| `--roi x,y,w,h`                                                | Restrict the search region                                              |
+| `--min-area`, `--blur`, `--open`, `--close`                    | Mask clean-up parameters                                                |
+| `--led-roi x,y,w,h`                                            | LED synchronisation box (without it, set `--t0-video` by hand)          |
+| `--mm-per-px`, or `--scale-line x0,y0,x1,y1 --scale-length mm` | Length calibration                                                      |
+| `--coil x,y`                                                   | Coil centre (needed for the distance curve)                             |
+| `--smooth`                                                     | Savitzky–Golay window in frames, used to fit the velocity               |
+| `--v-min`                                                      | Speed floor for ℰ/\|**v**\| — see below. Default: 8 % of the peak speed |
 
-## 아두이노
+### The speed floor used for ℰ/|v|
 
-저장소 루트의 `faraday_logger/faraday_logger.ino` 를 업로드하세요.
+At a turning point the magnet really does stop, so ℰ/\|**v**\| would run away.
+Rather than drop those samples and leave the curve full of holes, the
+**denominator** is held at a floor: below `v_min` the plotted value is
+ℰ/`v_min`, not ℰ/\|**v**\|.
 
-- **ADS1115** 16비트 ADC (I2C: A4/A5), 코일은 AIN0–AIN1 **차동 입력**
-  → 유도전압의 부호가 보존됩니다
-- 게인 `GAIN_SIXTEEN`(±0.256 V, 7.8 µV/LSB), 데이터레이트 128 SPS
-  → 실측 **약 116 Hz**. ±256 mV에서 잘리면 `GAIN_EIGHT`로 낮추세요
-- **D9의 LED**가 동기화 신호입니다. 스케치가 LED를 켜는 순간이 전압 로그의
-  t = 0, 영상에서 **LED가 처음 켜져 보이는 프레임**이 영상의 t = 0
-  → LED는 반드시 카메라 화면 안에 들어와야 합니다
-- 출력은 `t_ms,voltage_mV` CSV. PC에서 저장:
+- Those samples are **shaded** on Fig. 3 and flagged by the
+  `emf_over_v_floored` column in `synced.csv`, so it is always visible which
+  points are which.
+- **The speed curve itself is never floored.** Fig. 2 shows the real speed,
+  reaching zero at the turning points, because that is what a pendulum does.
+- The default floor is 8 % of the peak speed. A physically motivated choice is
+  the smallest speed the frame rate can resolve at a turning point,
+  π·v_peak/(T·fps) — for a 1.05 s period at 30 fps that is about 10 % of the
+  peak. Below that you are not measuring speed, you are measuring the sampling.
+- `--v-min 0` turns the floor off entirely: the ratio is then exact wherever
+  the magnet moves and left blank where the speed is exactly zero.
+
+## Arduino
+
+Upload `faraday_logger/faraday_logger.ino` from the repository root.
+
+- **ADS1115** 16-bit ADC over I²C (A4/A5), coil across AIN0–AIN1 as a
+  **differential input** — so the sign of the induced voltage is preserved.
+- Gain `GAIN_FOUR` (±1.024 V, 0.03125 mV per bit), sampled at **100 Hz**. If
+  the log clips at ±1024 mV, step down to `GAIN_TWO`.
+- **The LED on D7 is the synchronisation marker.** The instant the sketch
+  switches it on is t = 0 in the voltage log; the **first video frame in which
+  it appears lit** is t = 0 in the video. The LED must therefore be inside the
+  camera frame.
+- Output is `time_s,voltage_mV` CSV, after typing `start` in the serial
+  monitor. To capture it from a PC:
 
 ```bash
 python3 -m pip install pyserial
@@ -223,146 +272,153 @@ python3 tools/serial_logger.py --list
 python3 tools/serial_logger.py --port /dev/ttyACM0 --out voltage.csv --seconds 20
 ```
 
-`--list` 가 포트 목록을 보여줍니다. macOS는 보통 `/dev/tty.usbmodem…` 입니다.
+`--list` prints the available ports; on macOS they are usually
+`/dev/tty.usbmodem…`.
 
-시리얼 모니터 내용을 그대로 복사해 저장해도 됩니다. 다른 스케치·다른 로거로
-받은 파일도 그대로 넣으면 됩니다 — 실제 실험 로그에서 확인한 것들:
+Copying the serial monitor's output into a file by hand works just as well, and
+a log from a different sketch or logger can be used as it is. Things seen in
+real logs and handled:
 
-- `#` 주석, **헤더 없음**, 쉼표/세미콜론/탭/공백 구분자
-- 시간 단위 ms·µs·s, 전압 단위 mV·V **자동 판별** (`--voltage-unit`으로 강제 가능).
-  헤더가 없으면 ① ADS1115 최대 입력 ±6.144 V를 넘는 값이면 mV, ② 값들이
-  ADS1115 LSB(예: GAIN_FOUR = 0.03125 mV) 배수로 떨어지면 mV로 판정합니다.
-  판정 결과는 실행 로그와 웹 UI에 항상 표시되니 확인하세요.
-- **쓰지 않는 빈 열**(`t,v,0,0,0,…`)은 무시
-- **시간이 어긋난 행**(이전 실행에서 남은 첫 줄, 마지막 값이 여러 번 반복된 꼬리)은
-  정렬하지 않고 **버립니다**. 정렬해 넣으면 기록 길이가 늘어나고 없는 공백이
-  생기기 때문입니다. 몇 행을 버렸는지 결과에 표시됩니다.
+- `#` comments, **no header at all**, comma/semicolon/tab/space separators.
+- Time in ms, µs or s and voltage in mV or V are **detected automatically**
+  (`--voltage-unit` forces it). With no header: a value beyond the ADS1115's
+  ±6.144 V limit means millivolts, and values landing on multiples of an
+  ADS1115 LSB (0.03125 mV at `GAIN_FOUR`) mean millivolts. The verdict is
+  always reported in the run log and in the web UI — check it.
+- **Unused empty columns** (`t,v,0,0,0,…`) are ignored.
+- **Rows whose timestamps go backwards** (a leftover first line from a previous
+  run, or a repeated tail value) are **dropped, not re-sorted**: sorting them in
+  would stretch the record and invent a gap that never existed. The count of
+  dropped rows is reported.
 
-## 영상 형식
+## Video formats
 
-**웹 UI**는 브라우저가 재생할 수 있는 형식이면 뭐든 됩니다 — 요즘 크롬·엣지·
-사파리는 대부분 mp4(H.264/HEVC), webm(VP9/AV1)을 재생합니다. 브라우저가 못 여는
-파일이면 화면에 바로 오류가 뜨고, `ffmpeg -i 원본.mp4 -c:v libx264 -pix_fmt
-yuv420p -an swing.mp4` 로 재인코딩하면 대부분 해결됩니다.
+**The web UI** accepts anything the browser can play — current Chrome, Edge and
+Safari handle mp4 (H.264/HEVC) and webm (VP9/AV1). A file the browser cannot
+open reports an error immediately; re-encoding usually fixes it:
+`ffmpeg -i original.mp4 -c:v libx264 -pix_fmt yuv420p -an swing.mp4`.
 
-**CLI**(로컬, OpenCV 기반)는 이보다 관대합니다 — mp4·mov·avi·mkv 등을 그대로
-넣으면 되고, OpenCV가 못 읽는 코덱(아이폰 HEVC 등)은 같이 설치된 ffmpeg로
-**H.264 고정 프레임레이트 사본을 자동 생성**해서 분석합니다 (`doctor` 명령으로
-원인 진단, 자세한 내용은 이전 버전 기록 참고). 이 자동 변환은 **로컬 서버
-모드(`local_mode`)의 CLI/구버전 웹 경로에만 있고, 공개 배포한 웹 UI(브라우저
-추적)에는 없습니다** — 영상이 서버로 가지 않으니 서버가 대신 변환해 줄 수도
-없습니다.
+**The CLI** (local, OpenCV) is more forgiving — mp4, mov, avi, mkv and so on go
+in directly, and a codec OpenCV cannot read (iPhone HEVC, for instance) is
+**converted automatically** to a constant-frame-rate H.264 copy using the
+ffmpeg installed alongside. That conversion exists **only in local mode**, not
+in a public deployment: the video never reaches the server, so the server
+cannot convert it for you.
 
-영상이 안 열리면 **원인부터 확인**하세요:
+If a video will not open, **find out why first**:
 
 ```bash
-python3 -m faradaycv doctor /경로/swing.mp4
+python3 -m faradaycv doctor /path/to/swing.mp4
 ```
 
-`moov atom is missing` 이 나오면 코덱이 아니라 **파일이 불완전한 것**입니다.
-MP4는 재생에 필요한 색인(`moov`)이 파일 끝에 있어서, 복사가 중간에 끊기면
-크기는 그럴듯한데 아무 프로그램도 못 여는 파일이 됩니다. 아이폰이라면 사진
-앱에서 **파일 > 내보내기 > 원본 내보내기**로 다시 뽑고, iCloud 다운로드가
-끝날 때까지 기다린 뒤 바이트 크기를 비교하세요.
+`moov atom is missing` is **not a codec problem — it is an incomplete file**.
+MP4 keeps the index needed for playback (`moov`) at the end, so a copy that was
+cut short looks the right size but no program can open it. On an iPhone, export
+again with **File → Export → Export Unmodified Original**, wait for the iCloud
+download to finish, and compare the byte size.
 
-## 실험 세팅 요령
+## Setting up the experiment
 
-- 자석에 **배경에 없는 단색 표식**(빨강·형광 스티커)을 붙이면 세그멘테이션이
-  훨씬 안정적입니다. 실험대에 같은 색 물건을 두지 마세요.
-- 웹캠은 **스윙 평면에 수직**으로, 삼각대에 고정. 흔들리면 픽셀 좌표가 통째로
-  움직입니다.
-- 조명은 일정하게. 형광등 깜빡임이 심하면 셔터가 짧은 카메라를 쓰세요.
-- 코일은 **최하점이 아니라 회전점 근처**에 — 이것이 속도와 위치를 분리하는
-  핵심 장치입니다.
-- 길이 보정: 화면 안에 **자(ruler)나 길이를 아는 물체**를 함께 찍고,
-  웹 UI에서 그 구간을 드래그한 뒤 실제 길이(mm)를 입력하세요.
-- 촬영한 카메라의 **실제 fps**를 웹 UI의 "추적 fps"에 맞추세요. 폰 카메라는
-  촬영 중 프레임레이트가 미세하게 흔들릴 수 있는데(가변 프레임레이트), 이
-  분석은 브라우저가 각 프레임에서 실제로 보고하는 시각을 쓰므로 대체로
-  괜찮지만, 지정한 fps가 실제와 크게 다르면 프레임을 건너뛰거나 중복 추적할
-  수 있습니다.
+- Put a **plain coloured marker on the magnet** in a colour that appears nowhere
+  else (red, or fluorescent tape). Keep anything of that colour off the bench.
+- Mount the camera — a **webcam or a smartphone** — on a tripod,
+  **perpendicular to the plane of the swing**. If it moves, every pixel
+  coordinate moves with it.
+- Keep the lighting steady. If mains flicker is bad, use a camera with a short
+  shutter.
+- Put the coil **near a turning point, not at the lowest point** — that is the
+  whole device for separating speed from position.
+- Calibration: film a **ruler or an object of known length** in the frame, drag
+  across it in the web UI, and type the real length in mm.
+- Set the web UI's tracking fps to the camera's **actual** fps. A phone's frame
+  rate wobbles slightly while recording (variable frame rate); the analysis uses
+  the time the browser reports for each frame, so that is usually fine, but an
+  fps far from the truth can skip or double-count frames.
 
-## 잘 안 될 때
+## When it does not work
 
-| 증상                                          | 확인할 것                                                                                                                                                                                                                                                |
-| --------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| 검출률이 낮다 (`detected in only …%`)         | S/V 하한을 낮추고 H 범위를 넓히세요. `--min-area`도 줄여보세요                                                                                                                                                                                           |
-| 덩어리가 여러 개 잡힌다                       | 검색 영역(ROI) 지정, 또는 H 범위를 좁히기                                                                                                                                                                                                                |
-| 추적이 팔·피부색 등 엉뚱한 곳으로 튄다        | 검색 영역(ROI)으로 자석이 지나가는 구역만 남기는 게 가장 확실합니다. 그다음 "2. 색 범위"의 **최대 이동(px/프레임)**에 값을 넣으면, 그보다 멀리 떨어진 검출은 무시하고 이전 위치를 유지합니다                                                             |
-| `LED never crossed the on-threshold`          | LED 영역이 LED를 제대로 덮는지 확인. 안 되면 `--t0-video`/"수동 t₀"로 지정                                                                                                                                                                               |
-| `LED region is bright in every frame`         | LED가 켜진 뒤에 녹화를 시작한 경우. **녹화를 먼저 시작**하고 아두이노를 리셋하세요                                                                                                                                                                       |
-| `records do not overlap`                      | 전압 로그와 영상이 다른 시행의 것이거나 t₀가 잘못됨                                                                                                                                                                                                      |
-| ℰ/v가 회전점에서 폭발한다                     | 정상입니다(v→0). `--v-min`을 올리세요                                                                                                                                                                                                                    |
-| 속도 곡선이 톱니처럼 떨린다                   | `--smooth` 값을 키우세요(프레임 수, 홀수)                                                                                                                                                                                                                |
-| 웹 UI에서 영상이 안 열린다                    | 메시지가 **"색인(moov)이 없다"** 면 코덱이 아니라 **파일이 옮기다 잘린 것**입니다 — 형식을 바꿔도 소용없고, 원본을 다시 받아야 합니다(이메일 첨부·카카오톡 대용량 전송이 흔한 원인). 그 외의 메시지면 진짜 코덱 문제이니 H.264(mp4)로 다시 내보내 보세요 |
-| 웹 UI에서 추적이 오래 걸린다                  | 영상이 길거나 해상도가 큰 경우입니다. 검색 영역(ROI)을 지정하면 빨라집니다                                                                                                                                                                               |
-| "경로로 열기"/서버 업로드가 안 보인다         | 공개 배포(`FARADAYCV_LOCAL_MODE=0`)에서는 의도적으로 꺼져 있습니다. 브라우저 추적을 쓰세요                                                                                                                                                               |
-| `cannot read that video`                      | `python3 -m faradaycv doctor 파일` 로 원인을 먼저 확인하세요 (CLI/로컬 전용 기능)                                                                                                                                                                        |
-| `moov atom is missing` / `Invalid data found` | 코덱이 아니라 **잘린 파일**입니다. 원본을 다시 내보내거나 다시 복사하세요                                                                                                                                                                                |
-| `zsh: command not found: pip`                 | macOS에는 `pip` 명령이 없습니다. `python3 -m pip` 를 쓰세요                                                                                                                                                                                              |
-| `No module named 'flask'` / `'cv2'`           | 설치를 건너뛴 경우입니다. 위 **설치** 절차(venv + `python3 -m pip install -r requirements.txt`)                                                                                                                                                          |
-| `No module named faradaycv`                   | `faraday-cv` 폴더 밖에서 실행한 경우입니다                                                                                                                                                                                                               |
-| `zsh: command not found: #`                   | 명령 뒤 주석까지 복사한 경우입니다. zsh는 대화형에서 `#`을 주석으로 보지 않습니다                                                                                                                                                                        |
-| `externally-managed-environment`              | 시스템 파이썬에 직접 설치하려 한 경우. venv를 만들거나 `--user` 를 붙이세요                                                                                                                                                                              |
+| Symptom                                       | What to check                                                                                                                                                                                                                                                             |
+| --------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Low detection rate (`detected in only …%`)    | Lower the S/V minimums and widen the H range. Try a smaller `--min-area`                                                                                                                                                                                                  |
+| Several blobs are found                       | Set a search region (ROI), or narrow the H range                                                                                                                                                                                                                          |
+| Tracking jumps to an arm or to skin           | A search region (ROI) around just the strip the magnet passes through is the surest fix. After that, set **Max jump (px/frame)** in "2. Colour range" to ignore detections further away than that and hold the previous position                                          |
+| `LED never crossed the on-threshold`          | Check that the LED box really covers the LED; otherwise set `--t0-video` / "manual t₀"                                                                                                                                                                                    |
+| `LED region is bright in every frame`         | Recording started after the LED came on. **Start recording first**, then reset the Arduino                                                                                                                                                                                |
+| `records do not overlap`                      | The log and the video are from different runs, or t₀ is wrong                                                                                                                                                                                                             |
+| ℰ/\|**v**\| spikes at the turning points      | Expected — the speed goes to zero there. Raise `--v-min`                                                                                                                                                                                                                  |
+| The speed curve is a sawtooth                 | Raise `--smooth` (a frame count, odd). The velocity is fitted, not differenced, so this should be rare                                                                                                                                                                    |
+| The video will not open in the web UI         | If the message says the **index (`moov`) is missing**, it is a truncated file, not a codec problem — re-encoding will not help, you need the original again (large-file transfer apps are a common cause). Any other message is a real codec problem: export as H.264 mp4 |
+| Tracking in the web UI takes a long time      | A long or high-resolution clip. A search region (ROI) speeds it up                                                                                                                                                                                                        |
+| "Open by path" / server upload is missing     | Deliberately off in public mode (`FARADAYCV_LOCAL_MODE=0`). Use browser tracking                                                                                                                                                                                          |
+| `cannot read that video`                      | Run `python3 -m faradaycv doctor FILE` first (a local/CLI feature)                                                                                                                                                                                                        |
+| `moov atom is missing` / `Invalid data found` | A truncated file, not a codec. Export or copy the original again                                                                                                                                                                                                          |
+| The download fails, or saves a renamed file   | The run expired on the server. Press Run again                                                                                                                                                                                                                            |
+| `zsh: command not found: pip`                 | macOS has no `pip` command. Use `python3 -m pip`                                                                                                                                                                                                                          |
+| `No module named 'flask'` / `'cv2'`           | The install step was skipped — see **Running the web UI locally**                                                                                                                                                                                                         |
+| `No module named faradaycv`                   | You are outside the `faraday-cv` folder                                                                                                                                                                                                                                   |
+| `zsh: command not found: #`                   | A trailing comment was copied with the command. Interactive zsh does not treat `#` as a comment                                                                                                                                                                           |
+| `externally-managed-environment`              | Installing into the system Python. Make a venv, or add `--user`                                                                                                                                                                                                           |
 
-## 개발
+## Development
 
 ```bash
-python3 -m pip install -r requirements.txt   # CLI/로컬 웹 전체 기능 (OpenCV 포함)
+python3 -m pip install -r requirements.txt   # everything, including OpenCV
 python3 -m pytest -q
-node tests/browser/cv.test.mjs               # 브라우저 컬러 세그멘테이션 단위 테스트
+node tests/browser/cv.test.mjs               # browser colour-segmentation unit tests
 ruff check faradaycv tests
 ruff format --check faradaycv tests
 ```
 
-Python 쪽은 합성 데이터의 정답값과 대조하는 테스트입니다. 매번 영상을 실제로
-인코딩·디코딩해서 돌리고, OpenCV 추적 오차 1.5 px 이내·속도 오차 0.05 m/s 이내·
-LED 프레임 정확 일치·전압 정점 20 ms 이내, 그리고 "속도 최대 ≠ 전압 최대"라는
-논문의 결론까지 검증합니다. `requirements-web.txt`만 설치한(OpenCV 없는) 환경에서
-분석 파이프라인이 그대로 동작하는지도 확인합니다.
+The Python tests check against the ground truth of a synthetic dataset. They
+really encode and decode a video every run, and require tracking within 1.5 px,
+speed within 0.05 m/s, the exact LED frame, the voltage peak within 20 ms — and
+the paper's conclusion, that maximum speed and maximum voltage do not coincide.
+They also check that the analysis pipeline still runs in an environment with
+only `requirements-web.txt` installed, without OpenCV.
 
-브라우저 쪽(`static/cv.js`)은 Node로 바로 도는 순수 단위 테스트로 검증하고,
-Playwright가 설치돼 있으면(`pip install playwright && playwright install
-chromium`) `tests/browser/test_e2e.py` 가 실제 (헤드리스) 브라우저로 페이지를
-끝까지 조작해 서버 결과까지 확인합니다 — 없으면 조용히 건너뜁니다. 이 테스트
-환경의 헤드리스 크로미움에는 H.264 디코더가 없어서 대안 코덱으로 우회하는데,
-그 과정에서 측정된 추적 정밀도 관련 사항은 `tests/browser/README.md` 에
-정직하게 적어 두었습니다 — 실사용 브라우저(H.264 지원)에서는 해당하지 않을
-가능성이 높은, 이 테스트 환경 고유의 한계입니다.
+The browser side (`static/cv.js`) is covered by pure unit tests that run
+straight in Node, and if Playwright is installed
+(`pip install playwright && playwright install chromium`),
+`tests/browser/test_e2e.py` drives the real page in a headless browser all the
+way through to the server's results — it skips quietly if not. The headless
+Chromium in this test environment has no H.264 decoder, so the test substitutes
+another codec; what that does and does not tell you about tracking accuracy is
+written down honestly in `tests/browser/README.md`.
 
 ```
 faradaycv/
-  track.py          영상 소스와 무관한 추적 결과 모델 (cv2 불필요)
-  segmentation.py   HSV 색 범위, 마스크 정리, 덩어리 선택, 클릭→색 추정 (OpenCV, 지연 임포트)
-  video.py          OpenCV로 영상 디코딩 + 추적 (CLI/로컬 전용)
-  decode.py         재생 안 되는 영상 진단, 필요 시 H.264로 자동 변환 (CLI/로컬 전용)
-  voltage.py        아두이노 CSV 파서 (단위·구분자·헤더 자동 판별)
-  analysis.py       픽셀→미터 보정, 평활·미분, 시간축 동기화, ℰ/v
-  plots.py          논문용 Fig. 2 / Fig. 3 / 진단 그래프
-  pipeline.py       추적 결과 → 분석 → 파일 출력 (OpenCV 불필요)
-  webapp.py         웹 백엔드: /api/analyze(경량, 공개 배포용) + 서버측 처리(로컬 전용)
-  synthetic.py      합성 데이터 생성기 (데모 + 테스트 정답값, H.264로 인코딩)
-  cli.py            명령줄
+  track.py          Tracking results, independent of where the video came from (no cv2)
+  segmentation.py   HSV ranges, mask clean-up, blob choice, click-to-colour (OpenCV, lazy import)
+  video.py          OpenCV decoding + tracking (CLI/local only)
+  decode.py         Diagnoses unplayable video, converts to H.264 when needed (CLI/local only)
+  voltage.py        Arduino CSV parser (units, separators and headers detected)
+  analysis.py       Pixels to metres, smoothing, fitted velocity, time sync, ℰ/|v|
+  plots.py          The paper's Fig. 2 / Fig. 3 and the diagnostics figure
+  pipeline.py       Track -> analysis -> files (no OpenCV needed)
+  webapp.py         Web backend: /api/analyze (light, for public deployment) + server-side processing (local only)
+  synthetic.py      Synthetic dataset generator (demo + test ground truth, H.264)
+  cli.py            Command line
 static/
-  cv.js             브라우저 컬러 세그멘테이션 (segmentation.py의 JS 버전)
-  tracker.js         <video> 프레임 순회 + 전체 추적 루프
-  app.js, style.css, index.html   웹 UI
-../faraday_logger/        ADS1115 + LED 마커 스케치 (저장소 루트)
-tools/serial_logger.py    시리얼 → CSV 저장
-wsgi.py, Dockerfile, fly.toml   배포용
-../render.yaml   Render Blueprint (저장소 루트에 위치 -- Render가 그곳에서 찾음)
+  cv.js             Browser colour segmentation (the JS twin of segmentation.py)
+  tracker.js        <video> frame walk + the whole tracking loop
+  app.js, style.css, index.html   Web UI
+../faraday_logger/        ADS1115 + LED marker sketch (at the repository root)
+tools/serial_logger.py    Serial -> CSV
+wsgi.py, Dockerfile, fly.toml   Deployment
+../render.yaml            Render Blueprint (at the repository root, where Render looks)
 ```
 
 ---
 
-## 저자 및 라이선스
+## Authors and licence
 
-논문 _Beyond "Faster Magnet, More Voltage": A Quantitative Faraday's Law
-Experiment Using Computer Vision_ 에 딸린 소프트웨어입니다.
+Software accompanying _Beyond "Faster Magnet, More Voltage": A Quantitative
+Faraday's Law Experiment Using Computer Vision_.
 
 **Ui Chan Kim · Ye Geon Kim · Chan Hee Yang · Yongseok Jeong**
 
-© 2026, [MIT 라이선스](../LICENSE)로 공개합니다. 누구나 쓰고 고치고 재배포할 수
-있고, 위 저작권 표시와 라이선스 전문만 함께 남겨주시면 됩니다.
+© 2026, released under the [MIT licence](../LICENSE). Free to use, modify and
+redistribute, as long as the copyright notice and the licence text travel with
+it.
 
-이 도구로 얻은 결과를 발표하실 때는 위 논문을 인용해 주세요.
+If you publish results obtained with this tool, please cite the paper above.

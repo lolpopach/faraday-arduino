@@ -1,10 +1,11 @@
-"""From pixels to physics: calibration, smoothing, synchronisation, E/v.
+"""From pixels to physics: calibration, smoothing, synchronisation, E/|v|.
 
 Two clocks meet here.  The video clock starts at the first frame in which the
 marker LED is lit; the Arduino clock starts at the moment the sketch switched
 that LED on.  Once both records are shifted onto that shared origin, the
 magnet's position and speed can be interpolated onto the (faster) voltage
-timestamps, and Eq. (3) of the paper -- E/v proportional to -N dPhi/dx --
+timestamps, and Eq. (3) of the paper -- E/|v| proportional to -N dPhi/ds, the
+flux gradient along the instantaneous direction of motion --
 becomes a column in a table.
 """
 
@@ -280,10 +281,10 @@ class Synced:
     voltage: np.ndarray  # V
     speed: np.ndarray  # m/s
     distance: np.ndarray | None  # m
-    emf_over_v: np.ndarray  # V / (m/s)
+    emf_over_v: np.ndarray  # E/|v|, in V / (m/s)
     v_min: float
     #: True where the speed was below ``v_min`` and the floor stood in for it,
-    #: so ``emf_over_v`` there is E/v_min, not E/v.  The speed panel keeps the
+    #: so ``emf_over_v`` there is E/v_min, not E/|v|.  The speed panel keeps
     #: real speed; only this derived ratio needs the floor to stay finite.
     clamped: np.ndarray | None = None
     notes: list[str] = field(default_factory=list)
@@ -301,7 +302,7 @@ def synchronize(
     v_min: float | None = None,
     v_min_fraction: float = 0.08,
 ) -> Synced:
-    """Align the two records and derive E/v on the shared axis.
+    """Align the two records and derive E/|v| on the shared axis.
 
     ``t0_video`` is the time of the LED-onset frame in the video's own clock;
     ``t0_voltage`` the corresponding instant in the Arduino log (normally 0,
@@ -329,11 +330,12 @@ def synchronize(
         peak = float(np.nanmax(speed)) if speed.size else 0.0
         v_min = v_min_fraction * peak
 
-    # E/v is exact wherever the magnet is moving; it only misbehaves as v -> 0
-    # at the turning points, where the ratio runs away.  Rather than drop those
-    # samples and leave the curve full of holes, hold the *denominator* at a
-    # floor so the trace stays continuous and bounded.  The floor is recorded
-    # in `clamped` because the values under it are E/v_min, not E/v.
+    # E/|v| is exact wherever the magnet is moving; it misbehaves only as the
+    # speed goes to zero at the turning points, where the ratio runs away.
+    # Rather than drop those samples and leave the curve full of holes, hold
+    # the *denominator* at a floor so the trace stays continuous and bounded.
+    # The floor is recorded in `clamped` because the values under it are
+    # E/v_min, not E/|v|.
     clamped = speed < v_min if v_min > 0 else np.zeros(speed.shape, bool)
     if v_min > 0:
         ratio = voltage / np.maximum(speed, v_min)

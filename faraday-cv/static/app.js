@@ -591,9 +591,9 @@ const FIGURE_CAPTIONS = {
   "fig2_motion_and_voltage.png":
     "Fig. 2 (whole record) — distance, speed and induced voltage vs time.",
   "fig3_emf_over_velocity_detail.png":
-    "Fig. 3 — induced voltage ℰ and ℰ/v, the same window as Fig. 2.",
+    "Fig. 3 — induced voltage ℰ and ℰ/|v|, the same window as Fig. 2.",
   "fig3_emf_over_velocity.png":
-    "Fig. 3 (whole record) — induced voltage ℰ and ℰ/v ∝ −N dΦ/dx.",
+    "Fig. 3 (whole record) — induced voltage ℰ and ℰ/|v| ∝ −N dΦ/ds.",
   "diagnostics.png":
     "Diagnostics — centroid, blob area and the LED trace. Check these before " +
     "trusting the figures above.",

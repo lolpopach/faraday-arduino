@@ -344,7 +344,10 @@ def build_parser() -> argparse.ArgumentParser:
     )
     p_an.add_argument("--smooth", type=int, default=7)
     p_an.add_argument(
-        "--v-min", type=float, default=None, help="hide E/v below this speed"
+        "--v-min",
+        type=float,
+        default=None,
+        help="floor the speed used for E/|v| at this value",
     )
     p_an.add_argument("--title", default=None)
     p_an.add_argument("-o", "--out", default="out")

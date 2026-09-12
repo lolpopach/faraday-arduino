@@ -2,7 +2,8 @@
 
 Fig. 2 puts distance, speed and induced voltage on one time axis so that the
 two dashed markers -- maximum speed and maximum |emf| -- can be seen not to
-coincide.  Fig. 3 adds E/v, which by Eq. (3) tracks -N dPhi/dx.
+coincide.  Fig. 3 adds E/|v|, which by Eq. (3) tracks -N dPhi/ds -- the flux
+gradient along the instantaneous direction of motion.
 """
 
 from __future__ import annotations
@@ -41,8 +42,10 @@ CJK_FONT_CANDIDATES = (
 )
 
 #: Syllables a font must actually contain to count as Korean-capable.  Being
-#: named like a CJK font is not enough -- several cover Chinese only.
-_HANGUL_PROBE = "가힣한글"
+#: named like a CJK font is not enough -- several cover Chinese only.  Written
+#: as escapes so that every file in this repository stays ASCII: the first and
+#: last syllables of the Hangul block, plus the two of the word "Hangul".
+_HANGUL_PROBE = "\uac00\ud7a3\ud55c\uae00"
 
 
 @lru_cache(maxsize=None)
@@ -307,7 +310,7 @@ def figure_emf_over_velocity(
     title: str | None = None,
     window: tuple[float, float] | None = None,
 ):
-    """Fig. 3 -- the induced emf together with E/v (proportional to -N dPhi/dx).
+    """Fig. 3 -- the induced emf together with E/|v| (that is, -N dPhi/ds).
 
     Both curves on one time axis, each with its own scale: dividing out the
     speed is supposed to leave the flux gradient behind, and the figure earns
@@ -351,9 +354,9 @@ def figure_emf_over_velocity(
             ratio,
             color=C_RATIO,
             lw=1.9,
-            label=r"$\mathcal{E}/v \;\propto\; -N\,d\Phi/dx$",
+            label=r"$\mathcal{E}/|\mathbf{v}| \;\propto\; -N\,d\Phi/ds$",
         )[0]
-        ax2.set_ylabel(r"$\mathcal{E}/v$ (mV$\cdot$s/cm)", color=C_RATIO)
+        ax2.set_ylabel(r"$\mathcal{E}/|\mathbf{v}|$ (mV$\cdot$s/cm)", color=C_RATIO)
         ax2.tick_params(axis="y", colors=C_RATIO)
         if np.isfinite(ratio).any():
             lo, hi = float(np.nanmin(ratio)), float(np.nanmax(ratio))
@@ -361,15 +364,18 @@ def figure_emf_over_velocity(
             ax2.set_ylim(lo - pad, hi + pad)
 
         ax.set_title(
-            title or r"Comparison of induced voltage $\mathcal{E}$ and $\mathcal{E}/v$"
+            title
+            or r"Comparison of induced voltage $\mathcal{E}$ and $\mathcal{E}/|\mathbf{v}|$"
         )
         _legend_below(ax, [line_e, line_r])
         if synced.v_min > 0 and clamped is not None and clamped.any():
             ax.text(
                 0.0,
                 -0.34,
-                f"Shaded: turning points where $v < {synced.v_min * 100:.1f}$ cm/s; "
-                r"there $v$ is held at that floor so $\mathcal{E}/v$ stays finite.",
+                r"Shaded: turning points where $|\mathbf{v}| < "
+                + f"{synced.v_min * 100:.1f}"
+                + r"$ cm/s; there the speed is held at that floor so "
+                + r"$\mathcal{E}/|\mathbf{v}|$ stays finite.",
                 transform=ax.transAxes,
                 fontsize=8.5,
                 color="0.40",

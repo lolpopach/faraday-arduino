@@ -44,7 +44,7 @@ void setup() {
   if (!ads.begin(0x48)) {
     Serial.println("ERROR,ADS1115_NOT_FOUND");
 
-    // ADS1115 연결 실패 시 LED 빠르게 깜빡임
+    // ADS1115 not answering: blink the LED fast, forever
     while (1) {
       digitalWrite(SYNC_LED_PIN, HIGH);
       delay(100);
@@ -53,10 +53,10 @@ void setup() {
     }
   }
 
-  // ±1.024 V 범위, 약 0.03125 mV/bit
+  // +-1.024 V full scale, about 0.03125 mV per bit
   ads.setGain(GAIN_FOUR);
 
-  // ADS1115 내부 변환 속도 설정
+  // Internal conversion rate of the ADS1115
   ads.setDataRate(RATE_ADS1115_860SPS);
 
   Serial.println("READY");
@@ -74,7 +74,7 @@ void startMeasurement() {
   lastSampleTime_us = startTime_us;
   ledOnTime_us = startTime_us;
 
-  // LED 동기화 신호 ON
+  // Sync marker on: this instant is t = 0
   digitalWrite(SYNC_LED_PIN, HIGH);
 
   // CSV header
@@ -128,7 +128,7 @@ void loop() {
   // =========================
   readCommand();
 
-  // 측정 시작 전에는 ADC 출력하지 않음
+  // Print nothing until a measurement has been started
   if (!measuring) {
     return;
   }

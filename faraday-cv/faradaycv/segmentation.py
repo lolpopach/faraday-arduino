@@ -1,6 +1,6 @@
 """HSV colour segmentation: the core of the magnet tracker.
 
-Everything downstream (position, velocity, the E/v plot) depends on one
+Everything downstream (position, velocity, the E/|v| plot) depends on one
 question being answered well per frame: *which pixels are the magnet?*  We
 answer it with a hue/saturation/value box, because that is what a student can
 pick by clicking on the magnet and nudging three sliders.

@@ -11,7 +11,7 @@ Physics: a simple pendulum, and a dipole flux through a coil of radius ``a``,
 
     Phi(r) = (mu0 * m / 2) * a^2 / (r^2 + a^2)^(3/2),   emf = -N dPhi/dt
 
-with r the magnet-to-coil distance.  That is enough structure for dPhi/dx to
+with r the magnet-to-coil distance.  That is enough structure for dPhi/ds to
 vary sharply with position, which is the whole point of the experiment.
 """
 
