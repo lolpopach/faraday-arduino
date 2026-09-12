@@ -1,3 +1,10 @@
+// Coil voltage logger for the pendulum Faraday's law experiment.
+// Samples the ADS1115 at 100 Hz and flashes a sync LED for 0.5 s at t = 0,
+// which is what lines the log up with the video. See README.md.
+//
+// Copyright (c) 2026 Ui Chan Kim, Ye Geon Kim, Chan Hee Yang, Yongseok Jeong
+// MIT licence -- see LICENSE.
+
 #include <Wire.h>
 #include <Adafruit_ADS1X15.h>
 

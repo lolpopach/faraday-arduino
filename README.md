@@ -190,3 +190,5 @@ voltage off a common time axis. The two peaks are visibly apart.
 ---
 
 <sub>Accompanies _"Beyond 'Faster Magnet, More Voltage': A Quantitative Faraday's Law Experiment Using Computer Vision."_</sub>
+
+<sub>© 2026 Ui Chan Kim, Ye Geon Kim, Chan Hee Yang, Yongseok Jeong · released under the [MIT licence](LICENSE) — free to use and modify, as long as the copyright notice travels with it.</sub>
