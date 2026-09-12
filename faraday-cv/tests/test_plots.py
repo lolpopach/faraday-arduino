@@ -12,6 +12,7 @@ import pytest
 from faradaycv.analysis import Synced
 from faradaycv.plots import (
     C_DISTANCE,
+    C_FLOORED,
     C_SPEED,
     C_VOLTAGE,
     PAPER_STYLE,
@@ -253,3 +254,30 @@ def test_a_window_draws_only_that_slice(maker):
     assert (x0, x1) == pytest.approx((4.0, 7.0), abs=0.05)
     for xs in spans:
         assert xs.min() >= 4.0 and xs.max() <= 7.0
+
+
+def test_fig3_puts_both_scales_on_one_zero():
+    """Fig. 3 asks whether E/|v| changes sign where E does.  Two independently
+    autoscaled axes put their zeros at different heights, so the two curves
+    could only be compared by reading tick labels -- the comparison the figure
+    exists to make has to be visible.
+
+    The ratio here is deliberately lopsided (it reaches +0.9 and only -0.1),
+    which is what an autoscaled axis would centre somewhere other than zero.
+    """
+    synced = _synced()
+    synced.emf_over_v = 0.4 + 0.5 * np.sin(2 * np.pi * synced.t)
+    fig = figure_emf_over_velocity(synced)
+    lims = [ax.get_ylim() for ax in fig.axes]
+    plt.close(fig)
+    assert len(lims) == 2
+    for lo, hi in lims:
+        assert lo == pytest.approx(-hi), f"axis {lo}..{hi} is not centred on zero"
+
+
+def test_the_floored_band_is_not_the_same_grey_as_the_gridlines():
+    """They were identical, so a gridline read as a flagged sample."""
+    assert C_FLOORED != PAPER_STYLE["grid.color"]
+    assert float(C_FLOORED) < float(PAPER_STYLE["grid.color"]), (
+        "the band must be darker"
+    )

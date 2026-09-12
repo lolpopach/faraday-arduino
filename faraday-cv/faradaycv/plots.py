@@ -125,6 +125,11 @@ C_SPEED = "#1b7837"
 C_VOLTAGE = "#e8000b"
 C_RATIO = "#1a4fd6"
 
+#: The band marking samples where the speed was held at its floor.  Darker
+#: than the 0.87 gridlines on purpose: at the same grey the two were
+#: indistinguishable, and a gridline read as a flagged sample.
+C_FLOORED = "0.80"
+
 #: A little air above the tallest curve, so a peak does not sit on the spine.
 _HEADROOM = 1.12
 
@@ -358,10 +363,15 @@ def figure_emf_over_velocity(
         )[0]
         ax2.set_ylabel(r"$\mathcal{E}/|\mathbf{v}|$ (mV$\cdot$s/cm)", color=C_RATIO)
         ax2.tick_params(axis="y", colors=C_RATIO)
+        # Symmetric, like the voltage axis, so the two scales share one zero:
+        # a single grey line then means zero for both curves, and "where does
+        # E change sign, and does E/|v| change sign with it" -- which is the
+        # question the figure exists to answer -- can be read straight off.
+        # Two independent autoscales put the zeros at different heights and
+        # quietly invite the reader to compare the wrong things.
         if np.isfinite(ratio).any():
-            lo, hi = float(np.nanmin(ratio)), float(np.nanmax(ratio))
-            pad = 0.06 * (hi - lo) or 1.0
-            ax2.set_ylim(lo - pad, hi + pad)
+            reach = float(np.nanmax(np.abs(ratio))) or 1.0
+            ax2.set_ylim(-reach * _HEADROOM, reach * _HEADROOM)
 
         ax.set_title(
             title
@@ -398,7 +408,7 @@ def _shade_spans(ax, t: np.ndarray, mask: np.ndarray) -> None:
     ends = np.flatnonzero(edges == -1) - 1  # index of the last True in the run
     half = 0.5 * float(np.median(np.diff(t))) if t.size > 1 else 0.0
     for a, b in zip(starts, ends):
-        ax.axvspan(t[a] - half, t[b] + half, color="0.88", zorder=0, lw=0)
+        ax.axvspan(t[a] - half, t[b] + half, color=C_FLOORED, zorder=0, lw=0)
 
 
 def figure_diagnostics(track: Track, led_threshold: float | None = None):
