@@ -239,9 +239,8 @@ Rather than drop those samples and leave the curve full of holes, the
 **denominator** is held at a floor: below `v_min` the plotted value is
 ℰ/`v_min`, not ℰ/\|**v**\|.
 
-- Those samples are **shaded** on Fig. 3 and flagged by the
-  `emf_over_v_floored` column in `synced.csv`, so it is always visible which
-  points are which.
+- Those samples are flagged by the `emf_over_v_floored` column in
+  `synced.csv`, so it is always visible which points are which.
 - **The speed curve itself is never floored.** Fig. 2 shows the real speed,
   reaching zero at the turning points, because that is what a pendulum does.
 - The default floor is 8 % of the peak speed. A physically motivated choice is
@@ -250,6 +249,37 @@ Rather than drop those samples and leave the curve full of holes, the
   peak. Below that you are not measuring speed, you are measuring the sampling.
 - `--v-min 0` turns the floor off entirely: the ratio is then exact wherever
   the magnet moves and left blank where the speed is exactly zero.
+
+### What Fig. 3's shading means
+
+The shaded bands are **not** simply "where the floor was applied". They mark
+where ℰ/\|**v**\| is not a measurement at all.
+
+At a turning point ℰ and \|**v**\| both go to zero together, so their ratio
+does have a finite limit — but recovering it needs the video clock and the
+voltage clock to agree far better than one video frame, and at 30 fps the
+turning instant is only known to within half a frame. Shifting the video clock
+by that half frame moves ℰ/\|**v**\| there by more than its own value, while
+leaving it almost untouched where the magnet is moving:
+
+| Speed at that instant | How much half a frame of sync error moves ℰ/\|**v**\| |
+| --------------------- | ----------------------------------------------------- |
+| 30–50 cm/s            | 7 %                                                   |
+| 20–30 cm/s            | 25 %                                                  |
+| 10–20 cm/s            | 58 %                                                  |
+| 5–10 cm/s             | 111 %                                                 |
+
+So every sample carries `emf_over_v_uncertainty_Vs_per_m` in `synced.csv`, and
+one is shaded — and marked by `emf_over_v_unreliable` — when that uncertainty
+exceeds half the value itself. On a typical run this is about 15 % of the
+record, all of it around the turning points.
+
+**Do not quote the peak of ℰ/\|**v**\| as a result.** It sits inside the
+shaded region and it does not converge: lowering the floor from 6.7 to
+0.4 cm/s on one real record moved it from 0.72 to 2.04, a factor of 2.8. Quote
+the value at the |ℰ| peak instead, where the magnet is still moving at about
+60 % of top speed and the uncertainty is around 13 %. Read Fig. 3 for the
+shape and the sign structure, not for the height of the spikes.
 
 ## Arduino
 

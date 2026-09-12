@@ -287,7 +287,28 @@ class Synced:
     #: so ``emf_over_v`` there is E/v_min, not E/|v|.  The speed panel keeps
     #: real speed; only this derived ratio needs the floor to stay finite.
     clamped: np.ndarray | None = None
+    #: How far ``emf_over_v`` moves if the video clock is wrong by half a
+    #: frame, which is the best the frame rate can locate an instant.  Near a
+    #: turning point both E and |v| go to zero, so their ratio's limit is only
+    #: recoverable when the two clocks agree far better than one frame -- and
+    #: at 30 fps they cannot.  This is what says where the curve is a
+    #: measurement and where it is the sampling.
+    ratio_uncertainty: np.ndarray | None = None
     notes: list[str] = field(default_factory=list)
+
+    def unreliable(self, tolerance: float = 0.5) -> np.ndarray:
+        """Samples whose E/|v| a half-frame of sync error could move by more
+        than ``tolerance`` of the value itself."""
+        if self.ratio_uncertainty is None:
+            return (
+                self.clamped
+                if self.clamped is not None
+                else np.zeros(self.t.shape, bool)
+            )
+        loose = self.ratio_uncertainty > tolerance * np.abs(self.emf_over_v)
+        if self.clamped is not None:
+            loose |= self.clamped
+        return loose
 
     def __len__(self) -> int:
         return int(self.t.size)
@@ -345,6 +366,20 @@ def synchronize(
         moving = speed > 0
         ratio[moving] = voltage[moving] / speed[moving]
 
+    # How much a half-frame of sync error would move that ratio.  The video
+    # cannot place an instant better than half a frame, so this is the floor
+    # on the uncertainty of E/|v| -- tiny where the magnet is moving, and
+    # larger than the value itself near the turning points.
+    half_frame = 0.5 * float(np.median(np.diff(m.t))) if m.t.size > 1 else 0.0
+    if half_frame > 0:
+        shifted = [
+            voltage / np.maximum(np.interp(t + d, m.t, m.speed), max(v_min, 1e-12))
+            for d in (-half_frame, half_frame)
+        ]
+        uncertainty = np.maximum(*(np.abs(alt - ratio) for alt in shifted))
+    else:
+        uncertainty = np.zeros_like(ratio)
+
     notes = list(m.notes)
     overlap = hi - lo
     if overlap < 0.5:
@@ -357,6 +392,7 @@ def synchronize(
         emf_over_v=ratio,
         v_min=float(v_min),
         clamped=clamped,
+        ratio_uncertainty=uncertainty,
         notes=notes,
     )
 

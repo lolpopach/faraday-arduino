@@ -273,6 +273,13 @@ def export_results(result: AnalysisResult, outdir: str | Path) -> dict[str, str]
             # 1 where the speed was floored, so the ratio reads E/v_min
             names.append("emf_over_v_floored")
             cols.append(s.clamped.astype(int))
+        if s.ratio_uncertainty is not None:
+            # How far E/|v| moves if the video clock is out by half a frame --
+            # what says whether a point on Fig. 3 is a measurement at all
+            names.append("emf_over_v_uncertainty_Vs_per_m")
+            cols.append(s.ratio_uncertainty)
+            names.append("emf_over_v_unreliable")
+            cols.append(s.unreliable().astype(int))
         if s.distance is not None:
             names.insert(3, "distance_m")
             cols.insert(3, s.distance)

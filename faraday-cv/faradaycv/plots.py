@@ -325,16 +325,17 @@ def figure_emf_over_velocity(
     t = synced.t[sel]
     voltage = synced.voltage[sel] * 1e3  # mV
     ratio = synced.emf_over_v[sel] * 10  # (V.s/m) -> mV.s/cm
-    clamped = synced.clamped[sel] if synced.clamped is not None else None
+    # Shading marks where the ratio is not a measurement -- not merely where
+    # the speed was floored.  Near a turning point E and |v| both go to zero,
+    # and half a video frame of sync error moves their ratio by more than the
+    # value itself; the floor is only one symptom of that.
+    unreliable = synced.unreliable()[sel]
 
     with plt.rc_context(PAPER_STYLE):
         fig, ax = plt.subplots(figsize=(8.6, 4.6))
 
-        # Shade the turning points, where the floor stands in for v: the curve
-        # is continuous there but it is E/v_min, not E/v.  Saying so on the
-        # figure is the price of not leaving the trace full of holes.
-        if clamped is not None and clamped.any():
-            _shade_spans(ax, t, clamped)
+        if unreliable.any():
+            _shade_spans(ax, t, unreliable)
 
         line_e = ax.plot(
             t,
@@ -378,14 +379,14 @@ def figure_emf_over_velocity(
             or r"Comparison of induced voltage $\mathcal{E}$ and $\mathcal{E}/|\mathbf{v}|$"
         )
         _legend_below(ax, [line_e, line_r])
-        if synced.v_min > 0 and clamped is not None and clamped.any():
+        if unreliable.any():
             ax.text(
                 0.0,
                 -0.34,
-                r"Shaded: turning points where $|\mathbf{v}| < "
-                + f"{synced.v_min * 100:.1f}"
-                + r"$ cm/s; there the speed is held at that floor so "
-                + r"$\mathcal{E}/|\mathbf{v}|$ stays finite.",
+                "Shaded: near the turning points, where $\\mathcal{E}$ and "
+                "$|\\mathbf{v}|$ both approach zero and half a video frame of\n"
+                "timing error moves $\\mathcal{E}/|\\mathbf{v}|$ by more than its "
+                "own value. There, read the shape rather than the height.",
                 transform=ax.transAxes,
                 fontsize=8.5,
                 color="0.40",

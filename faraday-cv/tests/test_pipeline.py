@@ -99,6 +99,10 @@ def test_export_writes_every_figure_and_table(result, tmp_path):
         "emf_over_v_Vs_per_m",
         # says which rows had v held at the floor, so E/v there reads E/v_min
         "emf_over_v_floored",
+        # and how far half a frame of sync error would move the ratio, with
+        # the verdict that follows from it
+        "emf_over_v_uncertainty_Vs_per_m",
+        "emf_over_v_unreliable",
     ]
     rows = Path(written["synced_csv"]).read_text().splitlines()[1:]
     assert len(rows) == len(result.synced)

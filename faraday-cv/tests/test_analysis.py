@@ -301,3 +301,43 @@ def test_the_scale_check_stays_quiet_when_the_frame_size_is_unknown():
     not be accused of a bad scale."""
     motion = build_motion(_fake_track(), Calibration(mm_per_px=4.32))
     assert not any("frame is" in note for note in motion.notes)
+
+
+def test_emf_over_v_carries_the_uncertainty_half_a_frame_of_sync_would_cause():
+    """Near a turning point E and |v| both go to zero, so their ratio's limit
+    is only recoverable if the two clocks agree to far better than one video
+    frame -- and at 30 fps they cannot.  The figure has to be able to say
+    which points are a measurement and which are the sampling."""
+    motion = build_motion(_fake_track(), Calibration(mm_per_px=1000.0, smooth_window=0))
+    t = np.linspace(0, 0.9, 200)
+    log = VoltageLog(t=t, v=np.full_like(t, 0.01))
+    synced = synchronize(motion, log, v_min=None, v_min_fraction=0.05)
+
+    assert synced.ratio_uncertainty is not None
+    assert synced.ratio_uncertainty.shape == synced.emf_over_v.shape
+    assert (synced.ratio_uncertainty >= 0).all()
+
+    # it is the slow samples that are uncertain, not the fast ones
+    slow = synced.speed < np.percentile(synced.speed, 20)
+    fast = synced.speed > np.percentile(synced.speed, 80)
+    assert synced.ratio_uncertainty[slow].mean() > 10 * (
+        synced.ratio_uncertainty[fast].mean() + 1e-12
+    )
+
+    flagged = synced.unreliable()
+    assert flagged.any() and not flagged.all(), "the verdict must discriminate"
+    assert flagged[synced.clamped].all(), "a floored sample is never reliable"
+    # and the fast samples, where the ratio is exact, survive
+    assert not flagged[fast].any()
+
+
+def test_the_reliability_verdict_falls_back_when_there_is_no_uncertainty():
+    """A Synced rebuilt from an older CSV has no uncertainty column; it must
+    still answer, not raise."""
+    motion = build_motion(_fake_track(), Calibration(mm_per_px=1000.0, smooth_window=0))
+    t = np.linspace(0, 0.9, 200)
+    synced = synchronize(motion, VoltageLog(t=t, v=np.full_like(t, 0.01)))
+    synced.ratio_uncertainty = None
+    assert np.array_equal(synced.unreliable(), synced.clamped)
+    synced.clamped = None
+    assert not synced.unreliable().any()
